@@ -1,0 +1,13 @@
+{
+  "name": "hw06-api-testing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HW06 - API Testing (EShop SUT) - Postman + Newman",
+  "scripts": {
+    "test": "newman run collections/EShop-API-Tests.postman_collection.json -e environments/local.postman_environment.json --reporters cli,htmlextra,json --reporter-htmlextra-export results/html/newman-report.html --reporter-json-export results/raw/newman-run.json"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}

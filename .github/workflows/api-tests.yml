@@ -1,0 +1,60 @@
+name: API Tests (Newman)
+
+# Đề mục 6:91 — tích hợp bộ test API vào CI/CD.
+# Pipeline tự dựng SUT (clone eshop-sut, seed DB, chạy backend) rồi chạy Newman.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  newman:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout bộ test
+        uses: actions/checkout@v4
+
+      - name: Cài Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Clone SUT (EShop)
+        run: git clone --depth 1 https://github.com/ttbhanh/eshop-sut.git sut
+
+      - name: Cài dependency của SUT và khởi tạo DB
+        working-directory: sut/backend
+        run: |
+          npm install
+          node database.js
+
+      - name: Chạy backend nền
+        working-directory: sut/backend
+        run: |
+          nohup node server.js > server-run.log 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:3000/api/products && break
+            sleep 1
+          done
+          curl -sf -o /dev/null http://localhost:3000/api/products
+
+      - name: Cài Newman
+        run: npm install
+
+      - name: Chạy bộ test API
+        run: npm test
+
+      - name: Tải lên báo cáo Newman
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: |
+            results/html/
+            results/raw/
+
+      - name: Log của backend khi thất bại
+        if: failure()
+        run: cat sut/backend/server-run.log
