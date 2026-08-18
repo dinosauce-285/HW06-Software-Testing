@@ -23,6 +23,9 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 - [x] `environments/local.postman_environment.json`
 - [x] `scripts/reset-db.sh`, `scripts/extract-prompt-log.py`
 - [x] Workflow CI `.github/workflows/api-tests.yml`
+- [x] Chạy thử Newman trên một collection tối giản → toolchain thông, Newman tự tạo `results/`
+
+> Thư mục chỉ tạo khi thật sự dùng đến — xem bảng trong `README.md`.
 
 ## 1. API 1 — `POST /api/login` (Pool A, FR-02) — 30đ
 

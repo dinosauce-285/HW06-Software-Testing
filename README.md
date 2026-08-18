@@ -47,20 +47,26 @@ Ba API nối thành một luồng: **login → lấy token → checkout tạo đ
 
 ## 4. Cấu trúc thư mục
 
+Hiện tại repo chỉ có những gì đã dùng thật:
+
 ```
-collections/      Postman collection (.json)
 environments/     Postman environment (.json)
-data/             file dữ liệu cho Collection Runner (data-driven)
-scripts/          script phụ trợ (reset DB, seed, trích prompt log, tạo issue)
-results/raw/      output JSON thô của Newman
-results/html/     báo cáo HTML (newman-reporter-htmlextra)
-docs/             báo cáo chính, bug report, AI audit, AI critique, CI/CD report
-evidence/         ảnh chụp màn hình (bug, CI, console X-Student-Id)
-generator/        thiết kế AI test generator (sơ đồ tự vẽ + pseudocode)
+scripts/          reset-db.sh, extract-prompt-log.py
 .github/workflows CI/CD chạy Newman
-.claude/skills/   Agent Skill
 sut/              EShop SUT (KHÔNG commit — xem .gitignore)
 ```
+
+Các thư mục dưới đây **tạo khi nào cần đến**, không dựng sẵn:
+
+| Thư mục | Tạo ở bước nào |
+| --- | --- |
+| `collections/` | khi dựng collection Postman đầu tiên |
+| `data/` | khi làm data-driven run (Collection Runner + file CSV) |
+| `results/` | Newman **tự tạo** khi export báo cáo (`npm test`) |
+| `docs/` | khi viết báo cáo / audit / bug report |
+| `evidence/` | khi có ảnh chụp màn hình đầu tiên |
+| `generator/` | khi thiết kế AI test generator |
+| `.claude/skills/` | khi đóng gói Agent Skill |
 
 ## 5. Chạy lại toàn bộ
 
