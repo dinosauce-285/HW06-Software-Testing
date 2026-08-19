@@ -4,7 +4,11 @@
   "private": true,
   "description": "HW06 - API Testing (EShop SUT) - Postman + Newman",
   "scripts": {
-    "test": "newman run collections/EShop-API-Tests.postman_collection.json -e environments/local.postman_environment.json --reporters cli,htmlextra,json --reporter-htmlextra-export results/html/newman-report.html --reporter-json-export results/raw/newman-run.json"
+    "build": "node scripts/build-collection.js",
+    "pretest": "npm run build",
+    "test": "newman run collections/EShop-API-Tests.postman_collection.json -e environments/local.postman_environment.json --reporters cli,htmlextra,json --reporter-htmlextra-export results/html/conformance.html --reporter-json-export results/raw/conformance.json",
+    "pretest:ci": "npm run build",
+    "test:ci": "newman run collections/EShop-API-Regression.postman_collection.json -e environments/local.postman_environment.json --reporters cli,htmlextra,json --reporter-htmlextra-export results/html/regression.html --reporter-json-export results/raw/regression.json"
   },
   "devDependencies": {
     "newman": "^6.2.1",

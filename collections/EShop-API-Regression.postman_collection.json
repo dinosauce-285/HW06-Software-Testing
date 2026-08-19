@@ -1,0 +1,2497 @@
+{
+  "info": {
+    "_postman_id": "hw06-23127262-eshop-api-regression",
+    "name": "EShop API Regression — HW06 (23127262)",
+    "description": "Bộ test hồi quy dùng cho CI: giống bộ đầy đủ nhưng đã bỏ các case đang bắt lỗi đã biết, nên phải luôn XANH. Fail ở đây nghĩa là có hồi quy mới.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "API1 — POST /api/login (Pool A, FR-02)",
+      "item": [
+        {
+          "name": "0. Setup — nạp token dùng chung",
+          "item": [
+            {
+              "name": "SETUP-01 — Lấy token admin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// SETUP-01 — setup",
+                      "pm.test('đăng nhập admin thành công', () => pm.response.to.have.status(200));",
+                      "pm.environment.set('adminToken', pm.response.json().token);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "1. Phân vùng miền",
+          "item": [
+            {
+              "name": "TC-A1-001 — Email hợp lệ đã đăng ký + mật khẩu đúng",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-001 — domain",
+                      "pm.test('trả 200', () => pm.response.to.have.status(200));",
+                      "const b = pm.response.json();",
+                      "pm.test('có token', () => pm.expect(b.token).to.be.a('string').and.not.empty);",
+                      "pm.test('có thông tin user', () => pm.expect(b.user).to.be.an('object'));",
+                      "pm.environment.set('token', b.token);",
+                      "pm.environment.set('userId', b.user.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-002 — Email đúng định dạng nhưng chưa đăng ký",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-002 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"khongtontai@eshop.com\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-003 — Email thiếu ký tự @",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-003 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"testeshop.com\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-004 — Email thiếu phần domain",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-004 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test@\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-005 — Email thiếu phần local",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-005 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"@eshop.com\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-006 — Email thiếu TLD",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-006 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test@eshop\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-007 — Email có hai dấu @",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-007 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test@@eshop.com\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-008 — Email là chuỗi rỗng",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-008 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-009 — Thiếu hẳn trường email",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-009 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-010 — Email chỉ gồm khoảng trắng",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-010 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"   \",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-011 — Email có khoảng trắng thừa hai đầu — SUT không trim",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-011 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));",
+                      "// Ghi chú audit: đặc tả im lặng về việc trim. Chốt oracle theo hành vi đo được."
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \" test@eshop.com \",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-012 — Email viết HOA — SUT phân biệt hoa/thường",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-012 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));",
+                      "// Lệch RFC 5321 (domain không phân biệt hoa/thường) nhưng đặc tả không quy định -> khuyến nghị, không tính bug."
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"TEST@ESHOP.COM\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-013 — Email sai kiểu — số",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-013 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": 12345, \"password\": \"Test1234!\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-014 — Email là null",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-014 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": null, \"password\": \"Test1234!\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-015 — Mật khẩu đúng",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-015 — domain",
+                      "pm.test('trả 200', () => pm.response.to.have.status(200));",
+                      "pm.test('có token', () => pm.expect(pm.response.json().token).to.be.a('string'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-016 — Mật khẩu sai",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-016 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{freshEmail}}\",\n  \"password\": \"SaiRoi123!\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-017 — Mật khẩu là chuỗi rỗng",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-017 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{freshEmail}}\",\n  \"password\": \"\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-018 — Thiếu hẳn trường password",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-018 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{freshEmail}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-019 — Mật khẩu chỉ gồm khoảng trắng",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-019 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{freshEmail}}\",\n  \"password\": \"        \"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-020 — Mật khẩu sai hoa/thường — phải bị từ chối",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-020 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));",
+                      "// Mật khẩu BẮT BUỘC phân biệt hoa/thường — khác hẳn trường email."
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{freshEmail}}\",\n  \"password\": \"test1234!\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-021 — Mật khẩu sai kiểu — số",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-021 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"{{freshEmail}}\", \"password\": 12345678}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-022 — Mật khẩu là null",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-022 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"{{freshEmail}}\", \"password\": null}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-023 — Mật khẩu đúng nhưng của TÀI KHOẢN KHÁC",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-023 — domain",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));",
+                      "// Chứng minh mật khẩu được ràng buộc với đúng tài khoản, không dùng chéo được."
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{freshEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Giá trị biên",
+          "item": [
+            {
+              "name": "TC-A1-024 — Mật khẩu sai với độ dài dưới ngưỡng FR-01 (7 ký tự)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-024 — boundary",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));",
+                      "// Audit: bỏ lập luận 'ngắn hơn 8 nên bị từ chối'. Endpoint đăng nhập KHÔNG được",
+                      "// áp ràng buộc độ phức tạp của FR-01 — nếu áp thì tài khoản cũ sẽ không vào được."
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{freshEmail}}\",\n  \"password\": \"Test12!\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-026 — Mật khẩu 1 000 ký tự — không được làm sập server",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-026 — boundary",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('không phải lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\":\"{{freshEmail}}\",\"password\":\"A1!aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-027 — Email dài 320 ký tự — biên trên RFC 5321",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-027 — boundary",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('phản hồi dưới 2 giây', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.com\",\"password\":\"x\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-028 — Email 321 ký tự — vượt biên trên",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-028 — boundary",
+                      "pm.test('không phải lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.com\",\"password\":\"x\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-029 — Phần local dài 1 ký tự — biên dưới",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-029 — boundary",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"a@eshop.com\",\n  \"password\": \"x\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-030 — Body JSON rỗng hoàn toàn",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-030 — boundary",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Chuyển trạng thái",
+          "item": [
+            {
+              "name": "TC-A1-033 — Sai 3 lần → chuyển sang trạng thái LOCKED",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "  let done = 0;",
+                      "  const wrong = () => pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/login',",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'SaiRoi000!' }) }",
+                      "  }, () => { if (++done < 2) wrong(); });",
+                      "  wrong();",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-033 — state",
+                      "pm.test('đã chuyển sang LOCKED', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"{{freshEmail}}\", \"password\": \"SaiRoi000!\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-034 — Đang LOCKED + mật khẩu ĐÚNG → vẫn phải chặn",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "  let done = 0;",
+                      "  const wrong = () => pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/login',",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'SaiRoi000!' }) }",
+                      "  }, () => { if (++done < 3) wrong(); });",
+                      "  wrong();",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-034 — state",
+                      "pm.test('khóa chặn cả mật khẩu đúng', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"{{freshEmail}}\", \"password\": \"Test1234!\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-036 — Đăng nhập đúng phải reset bộ đếm về 0",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "  let done = 0;",
+                      "  const wrong = () => pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/login',",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'SaiRoi000!' }) }",
+                      "  }, () => { if (++done < 1) wrong(); });",
+                      "  wrong();",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-036 — state",
+                      "pm.test('đăng nhập thành công', () => pm.response.to.have.status(200));",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/admin/users',",
+                      "  header: { 'Authorization': 'Bearer ' + pm.environment.get('adminToken'), 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const u = res.json().find(x => x.email === pm.variables.get('freshEmail'));",
+                      "  pm.test(\"bộ đếm được reset về 0\", () => { pm.expect(u.login_attempts).to.eql(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"{{freshEmail}}\", \"password\": \"Test1234!\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-037 — Khóa một tài khoản KHÔNG lan sang tài khoản khác",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "  let done = 0;",
+                      "  const wrong = () => pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/login',",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'SaiRoi000!' }) }",
+                      "  }, () => { if (++done < 3) wrong(); });",
+                      "  wrong();",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-037 — state",
+                      "pm.test('tài khoản khác vẫn đăng nhập bình thường', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-038 — Sai 5 lần → thời gian khóa không cộng dồn vô hạn",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "  let done = 0;",
+                      "  const wrong = () => pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/login',",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'SaiRoi000!' }) }",
+                      "  }, () => { if (++done < 5) wrong(); });",
+                      "  wrong();",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-038 — state",
+                      "pm.test('vẫn ở trạng thái LOCKED', () => pm.response.to.have.status(403));",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/admin/users',",
+                      "  header: { 'Authorization': 'Bearer ' + pm.environment.get('adminToken'), 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const u = res.json().find(x => x.email === pm.variables.get('freshEmail'));",
+                      "  pm.test(\"thời gian khóa không cộng dồn theo số lần sai\", () => { const giay = Math.round((new Date(u.locked_until) - Date.now()) / 1000); pm.expect(giay, 'số giây còn lại').to.be.at.most(180) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"{{freshEmail}}\", \"password\": \"SaiRoi000!\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-039 — Sai 3 lần với email KHÔNG tồn tại → không lộ sự tồn tại",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'khongtontai-' + Date.now() + '@hw06.local';",
+                      "pm.variables.set('ghostEmail', email);",
+                      "let done = 0;",
+                      "const wrong = () => pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'SaiRoi000!' }) }",
+                      "}, () => { if (++done < 2) wrong(); });",
+                      "wrong();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-039 — state",
+                      "pm.test('luôn là 401, không bao giờ ra 403', () => pm.response.to.have.status(401));",
+                      "pm.test('cùng một thông báo lỗi', () => pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"{{ghostEmail}}\", \"password\": \"SaiRoi000!\"}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Bảo mật",
+          "item": [
+            {
+              "name": "TC-A1-040 — SQL injection — tautology OR '1'='1",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-040 — security",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\":\"' OR '1'='1\",\"password\":\"x\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-041 — SQL injection — chèn chú thích để bỏ qua mật khẩu",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-041 — security",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));",
+                      "pm.test('không cấp token', () => pm.expect(pm.response.text()).to.not.include('token'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\":\"admin@eshop.com'--\",\"password\":\"x\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-042 — Dấu nháy đơn lẻ trong email — không được lộ lỗi CSDL",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-042 — security",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));",
+                      "pm.test('không rò rỉ thông báo của CSDL', () => pm.expect(pm.response.text()).to.not.match(/SQLITE|syntax error/i));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\":\"O'Neill@eshop.com\",\"password\":\"x\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-043 — SQL injection ở trường password",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-043 — security",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\":\"{{freshEmail}}\",\"password\":\"' OR 1=1--\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-045 — SEC-02 — token đúng cấu trúc JWT ba phần",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-045 — security",
+                      "const t = pm.response.json().token;",
+                      "pm.test('JWT gồm 3 phần ngăn bởi dấu chấm', () => pm.expect(t.split('.')).to.have.lengthOf(3));",
+                      "pm.test('giải mã được phần payload', () => JSON.parse(atob(t.split('.')[1])));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-047 — SEC-02 — payload JWT không chứa dữ liệu nhạy cảm",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-047 — security",
+                      "const p = JSON.parse(atob(pm.response.json().token.split('.')[1]));",
+                      "pm.test('payload không chứa mật khẩu', () => pm.expect(p).to.not.have.property('password'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-048 — C5 — email không tồn tại và sai mật khẩu phải trả GIỐNG NHAU",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-048 — security",
+                      "const mine = { code: pm.response.code, body: pm.response.text() };",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ email: 'khong-he-ton-tai@hw06.local', password: 'SaiRoi123!' }) }",
+                      "}, (err, res) => {",
+                      "  pm.test('cùng status code', () => pm.expect(res.code).to.eql(mine.code));",
+                      "  pm.test('cùng nội dung thông báo', () => pm.expect(res.text()).to.eql(mine.body));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{freshEmail}}\",\n  \"password\": \"SaiRoi123!\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-049 — C5 — kênh phụ thời gian không được tiết lộ email có tồn tại",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Cỡ mẫu 10/nhóm theo audit. Nhưng KHÔNG được bắn 10 lần vào cùng một tài khoản:",
+                      "// khóa xảy ra ngay từ lần sai thứ 2, và nhánh 403 có đường đi khác hẳn nên phép đo",
+                      "// sẽ đo nhầm chi phí của việc bị khóa thay vì chi phí tra cứu email.",
+                      "// Cách đúng: 10 tài khoản CÓ THẬT khác nhau, mỗi tài khoản đúng MỘT lần thử sai.",
+                      "const ds = [];",
+                      "let tao = 0;",
+                      "const taoTiep = () => {",
+                      "  const email = 'timing-' + Date.now() + '-' + tao + '@hw06.local';",
+                      "  ds.push(email);",
+                      "  pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/register', method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ name: 'Timing', email: email, password: 'Test1234!' }) }",
+                      "  }, () => { if (++tao < 10) taoTiep(); else pm.variables.set('dsTimingEmail', JSON.stringify(ds)); });",
+                      "};",
+                      "taoTiep();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-049 — security",
+                      "const trungVi = a => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };",
+                      "const dsCo = JSON.parse(pm.variables.get('dsTimingEmail'));",
+                      "const dsKhong = dsCo.map((_, i) => 'khong-he-ton-tai-' + i + '@hw06.local');",
+                      "const do_ = (ds, i, acc, xong) => i === ds.length ? xong(acc) : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ email: ds[i], password: 'SaiRoi123!' }) }",
+                      "}, (e, r) => do_(ds, i + 1, acc.concat(r.responseTime), xong));",
+                      "do_(dsCo, 0, [], (co) =>",
+                      "  do_(dsKhong, 0, [], (khong) => {",
+                      "    const chenh = Math.abs(trungVi(co) - trungVi(khong));",
+                      "    pm.test('chênh lệch trung vị dưới 50 ms (thực đo: ' + chenh + ' ms)', () => pm.expect(chenh).to.be.below(50));",
+                      "  }));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"khong-he-ton-tai-0@hw06.local\", \"password\": \"SaiRoi123!\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-050 — SEC-04 — payload XSS trong email trả JSON, không trả HTML",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-050 — security",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('thông báo lỗi chung chung, không lộ nguyên nhân (C5)', () =>",
+                      "  pm.expect(pm.response.json().error).to.eql('Invalid email or password'));",
+                      "pm.test('Content-Type là JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\":\"<script>alert(1)</script>@x.com\",\"password\":\"x\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-051 — Injection kiểu đối tượng — {\"$ne\": null}",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-051 — security",
+                      "pm.test('không được cấp quyền truy cập', () => pm.expect(pm.response.code).to.not.eql(200));",
+                      "pm.test('không được sập server', () => pm.expect(pm.response.code).to.be.below(500));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": {\"$ne\": null}, \"password\": \"x\"}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Schema & HTTP",
+          "item": [
+            {
+              "name": "TC-A1-053 — user.id phải là số nguyên",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-053 — schema",
+                      "pm.test('user.id là số nguyên', () => pm.expect(pm.response.json().user.id).to.be.a('number'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-054 — user.role chỉ nhận 'user' hoặc 'admin'",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-054 — schema",
+                      "pm.test('role hợp lệ', () => pm.expect(['user', 'admin']).to.include(pm.response.json().user.role));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-055 — Response lỗi 401 phải là JSON, không phải HTML",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-055 — schema",
+                      "pm.test('trả 401', () => pm.response.to.have.status(401));",
+                      "pm.test('Content-Type là JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+                      "pm.test('thân là JSON hợp lệ có trường error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{freshEmail}}\",\n  \"password\": \"SaiRoi123!\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A1-057 — Sai method PUT",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A1-057 — schema",
+                      "pm.test('trả 404 hoặc 405', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Đề mục 6:85 — mọi request phải mang header X-Student-Id.",
+          "// Đặt ở cấp collection nên không request nào có thể thiếu.",
+          "const sid = pm.environment.get('studentId') || '23127262';",
+          "pm.request.headers.upsert({ key: 'X-Student-Id', value: sid });",
+          "",
+          "// Đề mục 11:131 — TA đối chiếu bằng ảnh chụp Postman Console.",
+          "console.log('[X-Student-Id] ' + sid + '  ->  ' + pm.request.method + ' ' + pm.request.url.getPath());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Khẳng định chung cho mọi response của bộ test.",
+          "pm.test('[chung] response dưới 2 giây', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+          "pm.test('[chung] không phải lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

@@ -43,8 +43,8 @@ jobs:
       - name: Cài Newman
         run: npm install
 
-      - name: Chạy bộ test API
-        run: npm test
+      - name: Chạy bộ test hồi quy (cổng CI)
+        run: npm run test:ci
 
       - name: Tải lên báo cáo Newman
         if: always()
