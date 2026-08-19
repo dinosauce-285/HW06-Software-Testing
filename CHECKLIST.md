@@ -69,12 +69,12 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 
 - [ ] **Sơ đồ TỰ VẼ** (không để AI sinh) `[!]` *(mục 11:133)* → `generator/`
 - [x] Pseudocode → `generator/pseudocode.md` — 6 giai đoạn, mỗi khối truy được về một lỗi thật của AI
-- [ ] Cài thành Agent Skill trong `.claude/skills/`
+- [x] Agent Skill → `.claude/skills/api-test-generator/` — SKILL.md + 2 file tham chiếu
 - [ ] Video YouTube demo skill sinh test cho 1 API `[~]` *(mục 7:96)*
 
 ## 5. Ràng buộc kỹ thuật xuyên suốt
 
-- [ ] Pre-request script cấp collection gắn `X-Student-Id: 23127262` cho **mọi** request `[!]` *(mục 6:85)*
+- [x] Pre-request script cấp collection gắn `X-Student-Id: 23127262` cho **mọi** request *(mục 6:85)*
 - [ ] **Ảnh chụp Postman Console** chứng minh header đó `[!]` *(mục 11:131)* → `evidence/postman/`
 - [x] Dùng nhiều tính năng Postman — **27 tính năng**, liệt kê ở `docs/Postman-Features.md` *(mục 6:90)*
 - [x] **Data-driven run** bằng `data/api3-transitions.csv` — 1 request × 25 dòng
@@ -83,10 +83,10 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 
 ## 6. CI/CD *(mục 6:91)*
 
-- [ ] Pipeline chạy được trên GitHub Actions
-- [ ] **Commit mẫu 1**: pipeline **pass toàn bộ** + ảnh + link
-- [ ] **Commit mẫu 2**: pipeline **fail đúng 1 case** + ảnh + link
-- [ ] `docs/CI-CD-Report.md` mô tả cấu hình + 2 lượt chạy
+- [x] Pipeline chạy được trên GitHub Actions — tự clone SUT, seed DB, chạy Newman
+- [x] **Commit mẫu 1** `88ce596` — run `32222002026` ✅ **448 khẳng định / 0 fail**
+- [x] **Commit mẫu 2** `7c1cd9c` — run `32223024403` ❌ **451 khẳng định / đúng 1 fail**
+- [x] `docs/CI-CD-Report.md` — cấu hình + 2 lượt chạy + ảnh chụp trang github.com thật
 
 ## 7. Tài liệu phải nộp *(mục 14:149)* — thiếu 1 cái là 0 điểm
 
@@ -94,7 +94,7 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 - [ ] `docs/AI-Audit-Report.md` (+ PDF) — tên tool, ngày giờ, prompt nguyên văn, output `[!]` *(mục 9:113)*
 - [ ] `docs/AI-Critique.md` (+ PDF) — đếm được **200–300 từ** `[!]` *(mục 10:121)*
 - [x] `docs/Bug-Report.md` — **26 lỗi** + **26 GitHub Issue** #1–#26 kèm ảnh
-- [ ] `docs/CI-CD-Report.md` + ảnh + link `[!]`
+- [x] `docs/CI-CD-Report.md` + ảnh + link
 - [x] Collection `.json` (3 bộ) + Newman HTML report → `collections/`, `results/html/`
 - [x] Test case dạng Excel + bảng tổng kết → `docs/Test-Cases.csv` (194 case) + `docs/Test-Summary.md`
 - [ ] Sơ đồ generator + pseudocode `[!]`
