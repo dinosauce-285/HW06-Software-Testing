@@ -74,14 +74,14 @@ total = sum(len(t) for _, t in sessions)
 lines = [
     "# AI Prompt Log - nhat ky tuong tac nguyen van",
     "",
-    "*(HW05 muc 9:130-134 - \"include the following information for each interaction: "
+    "*(HW06 muc 9:113 - \"include the following information for each interaction: "
     "Name of the AI tool / Date and time / Your prompt / The AI output\")*",
     "",
     "| Mục | Giá trị |",
     "|---|---|",
     "| **Cong cu AI** | Claude Opus 5 (`claude-opus-5`) qua Claude Code CLI |",
     "| **Sinh vien** | Ly Quoc Thanh - 23127262 |",
-    "| **Bai tap** | HW05 - Performance Testing |",
+    "| **Bai tap** | HW06 - API Testing |",
     f"| **Tong so luot tuong tac** | **{total}** |",
     f"| **So phien lam viec** | {len(sessions)} |",
     "| **Mui gio** | UTC+7 (gio Viet Nam) |",
