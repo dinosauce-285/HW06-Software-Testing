@@ -33,6 +33,10 @@
 | 21 | **Khẳng định bất đồng bộ lồng nhau** | Dựng tiền đề nhiều bước rồi mới khẳng định (tạo tài khoản → xoá tài khoản → gọi API bằng token cũ) | `TC-A2-E03`, `TC-A2-E04` |
 | 22 | **Gửi request song song trong script** | Bắn nhiều `pm.sendRequest` không chờ nhau để tạo tranh chấp đồng thời | `TC-A1-E03`, `TC-A2-E01` |
 | 23 | **Khẳng định trên hệ quả, không chỉ trên response** | Với endpoint ghi dữ liệu, oracle nằm ở bản ghi được tạo — đọc lại bằng `GET /api/orders/:id` rồi mới khẳng định | `docDon()` trong `tests/api2-checkout.cases.js` |
+| 24 | **Data-driven run + file dữ liệu CSV** | Ma trận 25 ô của FR-10 chạy bằng **một** request lặp qua 25 dòng dữ liệu | `collections/EShop-API3-Transitions.postman_collection.json` + `data/api3-transitions.csv` |
+| 25 | **`pm.iterationData`** | Đọc `tu_trang_thai`, `toi_trang_thai`, `ma_mong_doi` của từng dòng CSV để dựng tiền đề và chọn kỳ vọng | pre-request và test script của request `MATRIX` |
+| 26 | **Tên request động theo dữ liệu** | Request hiện tên `{{case_id}}: {{tu_trang_thai}} → {{toi_trang_thai}}` nên báo cáo đọc được từng lượt lặp | cùng file |
+| 27 | **Collection thứ ba tách riêng** | Ba collection cho ba mục đích: đầy đủ (bằng chứng bug), hồi quy (cổng CI), data-driven (ma trận trạng thái) | `collections/` |
 
 ## 2. Ghi chú về cách dựng collection
 
@@ -48,9 +52,8 @@ import thẳng vào Postman GUI được.
 
 | Tính năng | Lý do |
 | --- | --- |
-| **Data-driven run** (Collection Runner + file CSV/JSON) | *Chuyển sang API 3.* Làm xong API 2 mới thấy rõ: các case ở đây khác nhau **cả về tiền đề** (giỏ hàng dựng thế nào) **lẫn oracle** (đọc đơn hay đọc giỏ), nên nhồi vào một file CSV sẽ phải viết logic rẽ nhánh trong test script — rối hơn là tách case. API 3 (`PUT /api/admin/orders/:id/status`) mới thật sự hợp: 5 trạng thái × 5 trạng thái = **25 cặp chuyển đổi cùng một khuôn**, chỉ khác dữ liệu — đúng bài toán mà data-driven sinh ra để giải |
-| **Mock server** | *Dự kiến làm ở API 3* — dùng để dựng response mẫu cho các trạng thái đơn hàng mà SUT thật khó đưa vào |
+| **Mock server** | Cân nhắc ở API 3 rồi **quyết định không dùng**. Mock server để giả lập một API *chưa tồn tại*. Ở đây SUT đã chạy thật và mọi trạng thái đơn hàng đều dựng được bằng chính API thật (xem `duong` trong bộ data-driven). Dựng mock chỉ để có thêm một dòng trong bảng tính năng thì là kê khai hình thức, không phải kiểm thử |
 | **Monitor** | Cần workspace trên đám mây và SUT phải truy cập được từ Internet. SUT chạy `localhost` nên monitor sẽ không gọi tới được. Thay thế bằng lịch chạy trong GitHub Actions |
-| **Visualizer** | Cân nhắc cho bảng tổng kết trạng thái ở API 3 |
+| **Visualizer** | Visualizer vẽ HTML **trong giao diện Postman**; Newman ở chế độ dòng lệnh không hiển thị được, mà toàn bộ bằng chứng của bài này lấy từ Newman. Bảng ma trận trạng thái đã được trình bày trong `docs/api3/Audit.md` — cùng thông tin, và **kiểm chứng lại được** |
 
-> Bảng này sẽ được cập nhật khi làm xong API 2 và API 3.
+**Ghi chú về tính trung thực:** ba tính năng trên đều **cố tình không dùng**, kèm lý do kỹ thuật cụ thể. Đề khuyến khích dùng nhiều tính năng, nhưng dùng một tính năng sai chỗ chỉ để điền vào bảng thì không phải kiểm thử.

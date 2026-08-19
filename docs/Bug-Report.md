@@ -4,7 +4,8 @@
 > **và** trên trang GitHub Issues, mỗi issue kèm ảnh chụp.
 >
 > **Sinh viên:** 23127262 — **SUT:** `ttbhanh/eshop-sut` @ `85af3ba` — **Ngày chạy:** 19/08/2026
-> **Nguồn bằng chứng:** `results/raw/conformance.json` (Newman, **452 khẳng định / 40 thất bại**)
+> **Nguồn bằng chứng:** `results/raw/conformance.json` (Newman, **619 khẳng định / 59 thất bại**)
+> Ma trận trạng thái chạy riêng data-driven: `data/api3-transitions.csv` (150 khẳng định / 2 thất bại)
 >
 > **Nguyên tắc:** mỗi lỗi dưới đây đều (a) bị ít nhất một test case trong collection bắt được, và
 > (b) tái hiện lại được bằng lệnh `curl` chép nguyên ở mục "Tái hiện". Không có lỗi nào được viết
@@ -703,13 +704,317 @@ nhất chịu thiệt, vì họ không có sẵn token.
 
 ---
 
+# Phần 3 — API 3 (`PUT /api/admin/orders/:id/status`)
+
+## Tổng quan — API 3
+
+| Mã | Mức | Tiêu đề | Vi phạm | Test case bắt được | Nguồn |
+| --- | --- | --- | --- | --- | --- |
+| BUG-A3-01 | **Nghiêm trọng** | Không kiểm `role` — user thường đổi được trạng thái mọi đơn | **FR-12, SEC-03** | TC-A3-027→030, E03 | AI |
+| BUG-A3-02 | Cao | `canceled → delivered` được chấp nhận, phá trạng thái kết thúc | **FR-10** | M24, TC-A3-E04 | AI |
+| BUG-A3-03 | Trung bình | Hai chuyển đổi mâu thuẫn đồng thời cùng trả 200 | FR-10 | TC-A3-034 | AI |
+| BUG-A3-04 | **Nghiêm trọng** | **Toàn bộ** `/api/admin/*` thiếu kiểm `role` → chiếm quyền quản trị | **FR-12** | TC-A3-E01 | **Tự tìm** |
+| BUG-A3-05 | **Nghiêm trọng** | Người dùng lạ hủy được đơn hàng của người khác | FR-12 | TC-A3-E02 | **Tự tìm** |
+| BUG-A3-06 | **Nghiêm trọng** | Ghép BUG-A2-01 + BUG-A3-01 → khách tự ghi doanh thu vào dashboard | FR-08 + FR-12 + FR-13 | TC-A3-E05 | **Tự tìm** |
+
+**6 lỗi / 4 mức Nghiêm trọng — cả 3 lỗi tự tìm đều Nghiêm trọng.**
+
+---
+
+## BUG-A3-01 — Không kiểm `role`: user thường đổi được trạng thái mọi đơn hàng
+
+**Mức:** Nghiêm trọng · **Vi phạm:** FR-12, SEC-03 · **Vị trí:** `backend/server.js:525`
+
+FR-12 nói rõ: mọi API `/api/admin/*` phải yêu cầu **(1)** token hợp lệ **và (2)** `role = 'admin'`.
+SEC-03 nhắc lại: *"không chỉ kiểm tra sự tồn tại của Token"*. Endpoint chỉ gọi `authenticateToken`,
+không hề đọc `req.user.role`.
+
+### Tái hiện
+```bash
+./scripts/reset-db.sh
+UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' \
+     -d '{"email":"test@eshop.com","password":"Test1234!"}' | jq -r .token)
+OID=$(curl -s -X POST localhost:3000/api/checkout -H "Authorization: Bearer $UT" \
+      -H 'Content-Type: application/json' \
+      -d '{"total_amount":1000,"shipping_address":"x"}' | jq -r .orderId)
+# Token USER THƯỜNG gọi API admin, đẩy trọn vòng đời đơn hàng:
+for s in confirmed shipping delivered; do
+  printf "user đổi -> %-10s HTTP " "$s"
+  curl -s -o /dev/null -w "%{http_code}  " -X PUT localhost:3000/api/admin/orders/$OID/status \
+    -H "Authorization: Bearer $UT" -H 'Content-Type: application/json' -d "{\"status\":\"$s\"}"
+  echo "trạng thái: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)"
+done
+```
+
+### Kết quả thực tế
+```
+user đổi -> confirmed  HTTP 200  trạng thái: confirmed
+user đổi -> shipping   HTTP 200  trạng thái: shipping
+user đổi -> delivered  HTTP 200  trạng thái: delivered
+```
+
+### Kết quả mong đợi
+`403` ngay ở bước đầu.
+
+### Ảnh hưởng
+Khách hàng **tự tuyên bố đã nhận hàng** — hoặc ngược lại, chối là chưa nhận. Toàn bộ khâu đối soát
+giao hàng mất chỗ dựa. Và vì trạng thái `delivered` là căn cứ tính doanh thu ở FR-13, lỗi này chảy
+thẳng vào số liệu tài chính (xem BUG-A3-06).
+
+Ghi nhận điểm tốt: chữ ký JWT **được kiểm đúng** — sửa `role` trong payload mà không ký lại thì bị
+chặn 403. Vấn đề nằm ở chỗ token hợp lệ nào cũng được chấp nhận, không phân biệt vai trò.
+
+---
+
+## BUG-A3-02 — `canceled → delivered` được chấp nhận
+
+**Mức:** Cao · **Vi phạm:** FR-10 · **Vị trí:** `backend/server.js:552`
+
+FR-10: *"`delivered` và `canceled` là **trạng thái kết thúc** — không được phép chuyển sang bất kỳ
+trạng thái nào khác."*
+
+Tôi đo trọn **cả 25 ô** của ma trận bằng 25 đơn hàng riêng biệt. Kết quả khớp sơ đồ **24/25 ô**,
+lệch đúng một ô:
+
+| từ \ tới | `pending` | `confirmed` | `shipping` | `delivered` | `canceled` |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| **`pending`** | 400 | 200 | 400 | 400 | 200 |
+| **`confirmed`** | 400 | 400 | 200 | 400 | 200 |
+| **`shipping`** | 400 | 400 | 400 | 200 | 400 |
+| **`delivered`** | 400 | 400 | 400 | 400 | 400 |
+| **`canceled`** | 400 | 400 | 400 | **200 ← SAI** | 400 |
+
+### Tái hiện
+```bash
+./scripts/reset-db.sh
+AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' \
+     -d '{"email":"admin@eshop.com","password":"Admin123!"}' | jq -r .token)
+UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' \
+     -d '{"email":"test@eshop.com","password":"Test1234!"}' | jq -r .token)
+OID=$(curl -s -X POST localhost:3000/api/checkout -H "Authorization: Bearer $UT" \
+      -H 'Content-Type: application/json' \
+      -d '{"total_amount":9000000,"shipping_address":"x"}' | jq -r .orderId)
+curl -s -o /dev/null -X PUT localhost:3000/api/admin/orders/$OID/status \
+  -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"status":"canceled"}'
+echo "sau khi hủy: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)"
+curl -s -o /dev/null -w "đổi sang delivered -> HTTP %{http_code}\n" \
+  -X PUT localhost:3000/api/admin/orders/$OID/status \
+  -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"status":"delivered"}'
+echo "trạng thái cuối: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)"
+```
+
+### Kết quả thực tế
+```
+sau khi hủy: canceled
+đổi sang delivered -> HTTP 200
+trạng thái cuối: delivered
+```
+
+### Kết quả mong đợi
+`400 {"error":"Invalid state transition from canceled to delivered"}`
+
+### Ảnh hưởng
+Đơn đã hủy sống lại thành đã giao và **được cộng vào doanh thu FR-13**. Khách đã hủy, không nhận
+hàng, không trả tiền — nhưng sổ sách ghi là đã giao thành công.
+
+---
+
+## BUG-A3-03 — Hai chuyển đổi mâu thuẫn đồng thời cùng trả 200
+
+**Mức:** Trung bình · **Vi phạm:** FR-10 · **Vị trí:** `backend/server.js:525-565`
+
+Handler đọc trạng thái hiện tại rồi mới ghi trạng thái mới. Hai request cùng lúc đều đọc được
+`pending`, đều thấy chuyển đổi của mình hợp lệ, và đều trả 200 — nhưng chỉ một cái có hiệu lực.
+
+### Tái hiện
+```bash
+for run in 1 2 3; do
+  OID=$(curl -s -X POST localhost:3000/api/checkout -H "Authorization: Bearer $UT" \
+        -H 'Content-Type: application/json' -d '{"total_amount":1,"shipping_address":"z"}' | jq -r .orderId)
+  A=$(mktemp); C=$(mktemp)
+  curl -s -o /dev/null -w "%{http_code}" -X PUT localhost:3000/api/admin/orders/$OID/status \
+    -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"status":"confirmed"}' > $A &
+  curl -s -o /dev/null -w "%{http_code}" -X PUT localhost:3000/api/admin/orders/$OID/status \
+    -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"status":"canceled"}' > $C &
+  wait
+  echo "lượt $run: confirmed->$(cat $A) | canceled->$(cat $C) | cuối: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)"
+done
+```
+
+### Kết quả thực tế
+```
+lượt 1: confirmed->200 | canceled->200 | cuối: canceled
+lượt 2: confirmed->200 | canceled->200 | cuối: confirmed
+lượt 3: confirmed->200 | canceled->200 | cuối: confirmed
+```
+
+### Kết quả mong đợi
+Một trong hai phải thất bại. Trạng thái cuối cùng phải **tất định**.
+
+### Ảnh hưởng
+Nhân viên nhận được thông báo *"đã cập nhật thành công"* cho thao tác **không hề có hiệu lực**. Đơn
+tưởng đã hủy nhưng vẫn được đem đi giao, hoặc ngược lại. Và kết quả **không tất định** — chạy lại
+cùng kịch bản cho ra kết quả khác nhau.
+
+---
+
+## BUG-A3-04 — Toàn bộ `/api/admin/*` thiếu kiểm `role`: chiếm quyền quản trị
+
+**Mức:** Nghiêm trọng · **Vi phạm:** FR-12 · **Tự tìm, AI bỏ sót**
+**Vị trí:** `backend/server.js:199, 249, 257, 269, 457, 483, 494, 504, 510, 525`
+
+FR-12 phát biểu cho **cả họ API**: *"**Tất cả** các API Admin (`/api/admin/*`) … đều phải yêu cầu
+… `role = 'admin'` trong Token."* Không endpoint nào trong họ này kiểm `role`.
+
+### Tái hiện
+```bash
+./scripts/reset-db.sh
+UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' \
+     -d '{"email":"test@eshop.com","password":"Test1234!"}' | jq -r .token)
+H=(-H "Authorization: Bearer $UT" -H 'Content-Type: application/json')
+curl -s -o /dev/null -w "GET    /api/admin/users           -> %{http_code}\n" localhost:3000/api/admin/users "${H[@]}"
+curl -s -o /dev/null -w "GET    /api/admin/orders          -> %{http_code}\n" localhost:3000/api/admin/orders "${H[@]}"
+curl -s -o /dev/null -w "POST   /api/admin/coupons         -> %{http_code}\n" -X POST localhost:3000/api/admin/coupons "${H[@]}" \
+  -d '{"code":"HACK","type":"percent","discount_value":99,"min_order_amount":0,"expired_at":"2099-01-01","max_uses_per_user":99}'
+curl -s -o /dev/null -w "POST   /api/admin/import-products -> %{http_code}\n" -X POST localhost:3000/api/admin/import-products "${H[@]}" \
+  -d '{"products":[{"name":"X","price":1,"description":"","imageUrl":"","category_id":1}]}'
+curl -s -o /dev/null -w "DELETE /api/admin/users/9999      -> %{http_code}\n" -X DELETE localhost:3000/api/admin/users/9999 "${H[@]}"
+```
+
+### Kết quả thực tế
+```
+GET    /api/admin/users           -> 200
+GET    /api/admin/orders          -> 200
+POST   /api/admin/coupons         -> 200
+POST   /api/admin/import-products -> 200
+DELETE /api/admin/users/9999      -> 200
+```
+
+Và thao tác **thật sự có hiệu lực**:
+```
+# đọc được toàn bộ bảng người dùng
+[{"id":1,"name":"Admin User","email":"admin@eshop.com","role":"admin",
+  "login_attempts":0,"locked_until":null,"shipping_address":null}, ...]
+
+# mã giảm giá 99% do user thường tự tạo, áp dụng được ngay
+{"id":5,"code":"HACK","type":"percent","discount_value":99,"is_active":1,"max_uses_per_user":99}
+-> {"success":true,"message":"Áp dụng thành công! Giảm 99%"}
+
+# xoá tài khoản người khác, nạn nhân mất quyền đăng nhập
+xoá user id=3 -> HTTP 200
+tài khoản đó đăng nhập lại -> HTTP 401
+```
+
+### Kết quả mong đợi
+`403` ở mọi endpoint trong họ `/api/admin/*` khi token không mang `role = 'admin'`.
+
+### Ảnh hưởng
+Đây là **lỗ hổng nghiêm trọng nhất của cả bài**. Một tài khoản khách hàng bình thường có toàn quyền
+quản trị: đọc danh sách người dùng kèm email và trạng thái khóa, tự phát hành mã giảm giá bất kỳ,
+nhập sản phẩm, và **xóa tài khoản người khác**. Không cần khai thác kỹ thuật gì — chỉ cần đăng ký
+một tài khoản rồi gọi API.
+
+---
+
+## BUG-A3-05 — Người dùng lạ hủy được đơn hàng của người khác
+
+**Mức:** Nghiêm trọng · **Vi phạm:** FR-12 · **Tự tìm, AI bỏ sót**
+
+Ngoài chuyện thiếu kiểm `role`, endpoint còn **không kiểm quyền sở hữu**. Ghép với việc định danh
+đơn là số nguyên tăng dần, một tài khoản bất kỳ hủy sạch được đơn hàng của toàn hệ thống.
+
+### Tái hiện
+```bash
+./scripts/reset-db.sh
+UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' \
+     -d '{"email":"test@eshop.com","password":"Test1234!"}' | jq -r .token)
+OID=$(curl -s -X POST localhost:3000/api/checkout -H "Authorization: Bearer $UT" \
+      -H 'Content-Type: application/json' -d '{"total_amount":1000,"shipping_address":"x"}' | jq -r .orderId)
+# Một người HOÀN TOÀN XA LẠ:
+curl -s -o /dev/null -X POST localhost:3000/api/register -H 'Content-Type: application/json' \
+  -d '{"name":"Ke La","email":"kela@hw06.local","password":"Test1234!"}'
+XT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' \
+     -d '{"email":"kela@hw06.local","password":"Test1234!"}' | jq -r .token)
+curl -s -o /dev/null -w "người lạ hủy đơn -> HTTP %{http_code}\n" \
+  -X PUT localhost:3000/api/admin/orders/$OID/status \
+  -H "Authorization: Bearer $XT" -H 'Content-Type: application/json' -d '{"status":"canceled"}'
+echo "trạng thái đơn: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)"
+```
+
+### Kết quả thực tế
+```
+người lạ hủy đơn -> HTTP 200
+trạng thái đơn: canceled
+```
+
+### Kết quả mong đợi
+`403`.
+
+### Ảnh hưởng
+Trục quyền có hai câu hỏi — *anh là ai* và *cái này có phải của anh không* — và hệ thống không trả
+lời câu nào. Duyệt `id` từ 1 tới N là **hủy toàn bộ đơn hàng của cửa hàng**, chỉ với một tài khoản
+khách đăng ký miễn phí.
+
+---
+
+## BUG-A3-06 — Chuỗi ghép hai lỗi: khách tự ghi doanh thu vào dashboard
+
+**Mức:** Nghiêm trọng · **Vi phạm:** FR-08 + FR-12 + FR-13 · **Tự tìm, AI bỏ sót**
+
+Không lỗi đơn lẻ nào làm được điều này. Chuỗi cần **hai** lỗi ở **hai API khác pool**:
+
+1. **BUG-A2-01** — client tự đặt `total_amount` → tạo đơn trị giá tùy ý
+2. **BUG-A3-01** — user thường đổi được trạng thái → tự đẩy đơn sang `delivered`
+3. **FR-13** tính doanh thu = tổng `total_amount` của các đơn `delivered`
+
+### Tái hiện
+```bash
+./scripts/reset-db.sh
+UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' \
+     -d '{"email":"test@eshop.com","password":"Test1234!"}' | jq -r .token)
+AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' \
+     -d '{"email":"admin@eshop.com","password":"Admin123!"}' | jq -r .token)
+H=(-H "Authorization: Bearer $UT" -H 'Content-Type: application/json')
+O=$(curl -s -X POST localhost:3000/api/checkout "${H[@]}" \
+    -d '{"total_amount":999999999999,"shipping_address":"x"}' | jq -r .orderId)
+for s in confirmed shipping delivered; do
+  curl -s -o /dev/null -X PUT localhost:3000/api/admin/orders/$O/status "${H[@]}" -d "{\"status\":\"$s\"}"
+done
+echo "doanh thu (FR-13) = $(curl -s localhost:3000/api/admin/orders -H "Authorization: Bearer $AT" \
+  | jq '[.[] | select(.status=="delivered") | .total_amount] | add')"
+```
+
+### Kết quả thực tế
+```
+1. tự khai đơn trị giá 999.999.999.999 (BUG-A2-01) -> đơn 1
+2. tự đẩy đơn sang delivered (BUG-A3-01) -> delivered
+3. FR-13 doanh thu = 999999999999
+
+... và với số âm:
+   doanh thu sau đó = 0
+```
+
+### Kết quả mong đợi
+Không bước nào thành công.
+
+### Ảnh hưởng
+Một khách hàng bất kỳ vừa **thổi phồng** vừa **xóa sạch** được con số báo cáo tài chính của cửa
+hàng, tùy ý. Đây là ví dụ rõ nhất cho việc **mức nghiêm trọng thật của hệ thống nằm ở chuỗi ghép
+các lỗi, không nằm ở từng lỗi rời**: đọc riêng thì BUG-A2-01 là "lỗi kiểm dữ liệu đầu vào" và
+BUG-A3-01 là "lỗi phân quyền", ghép lại thành "khách hàng viết được sổ sách kế toán".
+
+
+---
+
 ## Đối chiếu nguồn phát hiện
 
-| Nguồn | API 1 | API 2 | Tổng | Trong đó Nghiêm trọng |
-| --- | --- | --- | --- | --- |
-| Test case AI sinh (sau khi tôi thẩm định và sửa) | 6 | 5 | **11** | 4 |
-| Test case tôi tự bổ sung ở bước 3 | 5 | 4 | **9** | **5** |
-| **Tổng** | **11** | **9** | **20** | **9** |
+| Nguồn | API 1 | API 2 | API 3 | Tổng | Trong đó Nghiêm trọng |
+| --- | --- | --- | --- | --- | --- |
+| Test case AI sinh (sau khi tôi thẩm định và sửa) | 6 | 5 | 3 | **14** | 5 |
+| Test case tôi tự bổ sung ở bước 3 | 5 | 4 | 3 | **12** | **8** |
+| **Tổng** | **11** | **9** | **6** | **26** | **13** |
+
+Trong **13 lỗi mức Nghiêm trọng**, có **8 lỗi do tôi tự tìm** — AI không chạm tới cái nào.
 
 Bốn trong năm lỗi tự tìm (BUG-A1-07, 08, 10, 11) đều nằm ở chỗ **hai trục kiểm thử giao nhau** —
 cơ chế khóa tài khoản (trạng thái) tạo ra lỗ hổng bảo mật. AI được dẫn qua từng trục riêng lẻ và

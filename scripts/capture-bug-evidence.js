@@ -151,8 +151,8 @@ printf '        thu mat khau DUNG -> HTTP '; curl -s -o /dev/null -w '%{http_cod
   },
 ];
 
-// Lỗi của API 2 để ở file riêng cho khỏi dài.
-CASES.push(...require("./bug-cases-api2.js"));
+// Lỗi của API 2 và API 3 để ở file riêng cho khỏi dài.
+CASES.push(...require("./bug-cases-api2.js"), ...require("./bug-cases-api3.js"));
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 

@@ -5,7 +5,7 @@
 
 **Ký hiệu:** `[!]` thiếu là **0 điểm toàn bài** *(mục 17:185)* — `[~]` mất điểm ở mục tương ứng
 
-**Cập nhật:** 19/08/2026 — **API 1 + API 2 xong**, còn API 3, Agent Skill, CI/CD, tài liệu
+**Cập nhật:** 19/08/2026 — **cả 3 API xong pipeline**, còn Agent Skill, CI/CD, tài liệu tổng
 
 ```bash
 grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
@@ -55,11 +55,14 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 
 ## 3. API 3 — `PUT /api/admin/orders/:id/status` (Pool C, FR-18) — 30đ
 
-- [ ] Generate → `docs/api3/AI-Generated-Raw.md`
-- [ ] Audit → `docs/api3/Audit.md`
-- [ ] Extend → `docs/api3/Extended.md`
-- [ ] Execute
-- [ ] Bugs + Issue
+- [x] **Generate**: 7 lượt prompt, **67 case** → `docs/api3/AI-Generated-Raw.md`
+      → AI tự dựng ma trận 5×5, tự đề xuất dạng data-driven, tự nêu mâu thuẫn đặc tả thứ hai
+- [x] **Audit**: **60 VALID / 1 INVALID / 6 INCOMPLETE** = **89,6 %** → `docs/api3/Audit.md`
+      → xu hướng qua 3 API: 45 % → 78 % → **90 %**, toàn bộ nhờ sửa prompt
+- [x] **Extend**: **5 case** tự bổ sung → `docs/api3/Extended.md`
+- [x] **Execute**: bộ chính **619 khẳng định / 59 fail**; ma trận data-driven **150 / 2**
+      → bộ hồi quy CI: **448 khẳng định, 0 fail**
+- [ ] **Bugs**: **6 lỗi** đã ghi `docs/Bug-Report.md`; còn mở GitHub Issue kèm ảnh
 
 ## 4. Agent Skill — AI test generator — 10đ *(mục 7:95)*
 
@@ -72,9 +75,9 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 
 - [ ] Pre-request script cấp collection gắn `X-Student-Id: 23127262` cho **mọi** request `[!]` *(mục 6:85)*
 - [ ] **Ảnh chụp Postman Console** chứng minh header đó `[!]` *(mục 11:131)* → `evidence/postman/`
-- [ ] Dùng nhiều tính năng Postman + **liệt kê trong báo cáo** *(mục 6:90)*
-- [ ] Data-driven run bằng file dữ liệu (`data/*.csv`) qua Collection Runner
-- [ ] Mock server + Monitor (nếu làm được)
+- [x] Dùng nhiều tính năng Postman — **27 tính năng**, liệt kê ở `docs/Postman-Features.md` *(mục 6:90)*
+- [x] **Data-driven run** bằng `data/api3-transitions.csv` — 1 request × 25 dòng
+- [x] Mock server + Monitor + Visualizer: **cân nhắc và quyết định không dùng**, có ghi lý do kỹ thuật trong `docs/Postman-Features.md`
 - [ ] Newman HTML report, hostname khớp deployment `[!]` *(mục 11:132)*
 
 ## 6. CI/CD *(mục 6:91)*
