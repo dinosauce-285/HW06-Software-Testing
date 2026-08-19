@@ -320,7 +320,7 @@ module.exports = [
   },
   {
     id: "TC-A1-046", name: "SEC-02 — JWT phải có hạn dùng (claim exp)", axis: "security", origin: "ai",
-    knownBug: "BUG-A1-05",
+    knownBug: "BUG-A1-04",
     path: "/api/login", body: { email: U, password: P },
     tests: [
       "const p = JSON.parse(atob(pm.response.json().token.split('.')[1]));",
@@ -450,7 +450,7 @@ module.exports = [
   },
   {
     id: "TC-A1-056", name: "Sai method GET — response vẫn phải là JSON của API", axis: "schema", origin: "ai",
-    knownBug: "BUG-A1-07", method: "GET", path: "/api/login",
+    knownBug: "BUG-A1-06", method: "GET", path: "/api/login",
     tests: [
       "pm.test('trả 404 hoặc 405', () => pm.expect([404, 405]).to.include(pm.response.code));",
       "pm.test('Content-Type là JSON chứ không phải HTML', () =>",
@@ -463,7 +463,7 @@ module.exports = [
   },
   {
     id: "TC-A1-059", name: "Body sai cú pháp JSON → 400 kèm thân JSON", axis: "schema", origin: "ai",
-    knownBug: "BUG-A1-07", path: "/api/login", rawBody: '{"email":',
+    knownBug: "BUG-A1-06", path: "/api/login", rawBody: '{"email":',
     tests: [
       "pm.test('trả 400', () => pm.response.to.have.status(400));",
       "pm.test('Content-Type là JSON chứ không phải HTML', () =>",
@@ -472,7 +472,7 @@ module.exports = [
   },
   {
     id: "TC-A1-060", name: "Content-Type: text/plain → phải 400/415, không được 500", axis: "schema", origin: "ai",
-    knownBug: "BUG-A1-06", path: "/api/login", contentType: "text/plain",
+    knownBug: "BUG-A1-05", path: "/api/login", contentType: "text/plain",
     rawBody: '{"email":"test@eshop.com","password":"Test1234!"}',
     tests: [
       "pm.test('trả 400 hoặc 415', () => pm.expect([400, 415]).to.include(pm.response.code));",
@@ -485,7 +485,7 @@ module.exports = [
   // ─────────────────────────────────────────────────────────────────────────
   {
     id: "TC-A1-E02", name: "Liệt kê tài khoản qua kênh 403 — email thật lộ mình ra", axis: "extended", origin: "human",
-    knownBug: "BUG-A1-08",
+    knownBug: "BUG-A1-07",
     prereq: [
       "// Bắn 2 lần sai vào email CÓ THẬT để đẩy nó vào trạng thái khóa.",
       "let done = 0;",
@@ -512,7 +512,7 @@ module.exports = [
   },
   {
     id: "TC-A1-E06", name: "Thông báo khi bị khóa không được nói thẳng lý do (C5)", axis: "extended", origin: "human",
-    knownBug: "BUG-A1-08",
+    knownBug: "BUG-A1-07",
     prereq: freshUser(failLogins(3)),
     path: "/api/login", rawBody: '{"email": "{{freshEmail}}", "password": "SaiRoi000!"}',
     tests: [
@@ -523,7 +523,7 @@ module.exports = [
   },
   {
     id: "TC-A1-E03", name: "Đồng thời — 5 lần sai song song không được làm mất cập nhật bộ đếm", axis: "extended", origin: "human",
-    knownBug: "BUG-A1-09",
+    knownBug: "BUG-A1-08",
     prereq: freshUser([
       "  // Bắn 5 request SONG SONG (không chờ nhau) để tạo tranh chấp đọc-sửa-ghi.",
       "  for (let i = 0; i < 5; i++) pm.sendRequest({",
@@ -542,7 +542,7 @@ module.exports = [
   },
   {
     id: "TC-A1-E04", name: "Phải có giới hạn tần suất theo IP", axis: "extended", origin: "human",
-    knownBug: "BUG-A1-10",
+    knownBug: "BUG-A1-09",
     path: "/api/login", rawBody: '{"email": "ma-rate-limit@hw06.local", "password": "SAI"}',
     tests: [
       "// Gửi 30 request liên tiếp từ cùng một nguồn; ít nhất một cái phải bị chặn (429).",
@@ -562,7 +562,7 @@ module.exports = [
   },
   {
     id: "TC-A1-E05", name: "Không được dùng khóa tài khoản làm vũ khí DoS lên người khác", axis: "extended", origin: "human",
-    knownBug: "BUG-A1-11",
+    knownBug: "BUG-A1-10",
     prereq: freshUser(failLogins(2)),
     path: "/api/login", rawBody: '{"email": "{{freshEmail}}", "password": "Test1234!"}',
     tests: [
@@ -595,7 +595,7 @@ module.exports = [
   },
   {
     id: "TC-A1-E01", name: "Hết hạn khóa phải reset bộ đếm — nếu không sẽ khóa vĩnh viễn", axis: "extended", origin: "human",
-    knownBug: "BUG-A1-12",
+    knownBug: "BUG-A1-11",
     prereq: freshUser(failLogins(3)),
     path: "/api/login", rawBody: '{"email": "{{freshEmail}}", "password": "SaiRoi000!"}',
     tests: [
