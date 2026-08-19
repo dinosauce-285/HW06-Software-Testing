@@ -10,39 +10,40 @@
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | API1 | `POST /api/login` | A | FR-02 | 58 | 7 | 66 | 50 | 16 | 11 |
 | API2 | `POST /api/checkout` | B | FR-08 | 51 | 5 | 57 | 37 | 20 | 9 |
-| **Tổng** | | | | **109** | **12** | **123** | **87** | **36** | **20** |
+| API3 | `PUT /api/admin/orders/:id/status` | C | FR-18 | 40 | 5 | 46 | 33 | 13 | 9 |
+| **Tổng** | | | | **149** | **17** | **169** | **120** | **49** | **26** |
 
 ## 2. Độ phủ theo trục kiểm thử
 
-| Trục | API1 | API2 | Tổng |
-| --- | ---: | ---: | ---: |
-| Chuẩn bị | 1 | 1 | **2** |
-| Phân vùng miền | 23 | 22 | **45** |
-| Giá trị biên | 6 | 7 | **13** |
-| Chuyển trạng thái | 9 | 6 | **15** |
-| Bảo mật | 12 | 11 | **23** |
-| Schema & HTTP | 8 | 5 | **13** |
-| Tự bổ sung | 7 | 5 | **12** |
+| Trục | API1 | API2 | API3 | Tổng |
+| --- | ---: | ---: | ---: | ---: |
+| Chuẩn bị | 1 | 1 | 1 | **3** |
+| Phân vùng miền | 23 | 22 | 11 | **56** |
+| Giá trị biên | 6 | 7 | 10 | **23** |
+| Chuyển trạng thái | 9 | 6 | 0 | **15** |
+| Bảo mật | 12 | 11 | 11 | **34** |
+| Schema & HTTP | 8 | 5 | 8 | **21** |
+| Tự bổ sung | 7 | 5 | 5 | **17** |
 
 ## 3. Chỉ số theo yêu cầu mục 14:160
 
 | Chỉ số | Giá trị |
 | --- | --- |
-| Số API kiểm thử | 2 |
-| Test case AI sinh ra | 109 |
-| Test case tự bổ sung | 12 |
-| Test case đã thực thi | 123 |
-| Passed | 87 |
-| Failed | 36 |
-| Số lỗi tìm được | 20 |
+| Số API kiểm thử | 3 |
+| Test case AI sinh ra | 149 |
+| Test case tự bổ sung | 17 |
+| Test case đã thực thi | 169 |
+| Passed | 120 |
+| Failed | 49 |
+| Số lỗi tìm được | 26 |
 
 ## 4. Lượt chạy Newman gần nhất
 
 | | |
 | --- | --- |
-| Request | 363 |
-| Khẳng định | 452 |
-| Khẳng định thất bại | 40 |
+| Request | 480 |
+| Khẳng định | 619 |
+| Khẳng định thất bại | 59 |
 
 > **Vì sao có khẳng định thất bại:** bộ test khẳng định theo **đặc tả**, mà SUT có lỗi thật.
 > Mỗi khẳng định thất bại đều truy được về một mã lỗi ở cột "Mã lỗi". Bộ hồi quy dùng cho CI

