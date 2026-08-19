@@ -1,0 +1,26 @@
+case_id,tu_trang_thai,toi_trang_thai,hop_le,ma_mong_doi,ghi_chu
+M01,pending,pending,khong,400,duong cheo - chuyen sang chinh no
+M02,pending,confirmed,co,200,admin xac nhan don
+M03,pending,shipping,khong,400,nhay coc qua confirmed
+M04,pending,delivered,khong,400,nhay coc hai bac
+M05,pending,canceled,co,200,huy khi dang cho xu ly
+M06,confirmed,pending,khong,400,lui trang thai
+M07,confirmed,confirmed,khong,400,duong cheo
+M08,confirmed,shipping,co,200,admin giao hang
+M09,confirmed,delivered,khong,400,nhay coc qua shipping
+M10,confirmed,canceled,co,200,huy khi da xac nhan
+M11,shipping,pending,khong,400,lui trang thai
+M12,shipping,confirmed,khong,400,lui trang thai
+M13,shipping,shipping,khong,400,duong cheo
+M14,shipping,delivered,co,200,admin hoan tat
+M15,shipping,canceled,khong,400,o map mo d2 - chot theo so do FR-10
+M16,delivered,pending,khong,400,roi trang thai ket thuc
+M17,delivered,confirmed,khong,400,roi trang thai ket thuc
+M18,delivered,shipping,khong,400,roi trang thai ket thuc
+M19,delivered,delivered,khong,400,duong cheo
+M20,delivered,canceled,khong,400,roi trang thai ket thuc
+M21,canceled,pending,khong,400,roi trang thai ket thuc
+M22,canceled,confirmed,khong,400,roi trang thai ket thuc
+M23,canceled,shipping,khong,400,roi trang thai ket thuc
+M24,canceled,delivered,khong,400,BUG-A3-02 - SUT dang cho phep
+M25,canceled,canceled,khong,400,duong cheo

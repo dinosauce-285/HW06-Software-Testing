@@ -1,0 +1,198 @@
+{
+  "info": {
+    "_postman_id": "hw06-23127262-eshop-api3-transitions",
+    "name": "EShop API3 — Ma trận chuyển trạng thái (23127262)",
+    "description": "Chạy data-driven trọn 25 ô của máy trạng thái FR-10. Cần file dữ liệu: npx newman run <file này> -e environments/local.postman_environment.json -d data/api3-transitions.csv",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Chuẩn bị",
+      "item": [
+        {
+          "name": "SETUP-DD — Nạp token admin và token user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// SETUP-DD — setup",
+                  "pm.environment.set('adminToken', pm.response.json().token);",
+                  "pm.sendRequest({",
+                  "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                  "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({ email: pm.environment.get('userEmail'), password: pm.environment.get('userPassword') }) }",
+                  "}, (err, res) => pm.environment.set('token', res.json().token));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ma trận 5×5 (data-driven)",
+      "item": [
+        {
+          "name": "MATRIX — {{case_id}}: {{tu_trang_thai}} → {{toi_trang_thai}}",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Dựng một đơn hàng MỚI cho mỗi dòng dữ liệu, rồi đẩy nó về trạng thái nguồn.",
+                  "// Mỗi dòng một đơn riêng để 25 lượt chạy không ảnh hưởng lẫn nhau.",
+                  "const duong = {",
+                  "  pending:   [],",
+                  "  confirmed: ['confirmed'],",
+                  "  shipping:  ['confirmed', 'shipping'],",
+                  "  delivered: ['confirmed', 'shipping', 'delivered'],",
+                  "  canceled:  ['canceled'],",
+                  "};",
+                  "const base = pm.environment.get('baseUrl');",
+                  "const sid = pm.environment.get('studentId');",
+                  "const admin = () => ({ 'Content-Type': 'application/json', 'X-Student-Id': sid,",
+                  "                       'Authorization': 'Bearer ' + pm.environment.get('adminToken') });",
+                  "",
+                  "pm.sendRequest({",
+                  "  url: base + '/api/checkout', method: 'POST',",
+                  "  header: { 'Content-Type': 'application/json', 'X-Student-Id': sid,",
+                  "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({ total_amount: 1000, shipping_address: '123 Le Loi' }) }",
+                  "}, (err, res) => {",
+                  "  const id = res.json().orderId;",
+                  "  pm.variables.set('donId', id);",
+                  "  const chuoi = duong[pm.iterationData.get('tu_trang_thai')] || [];",
+                  "  let k = 0;",
+                  "  const buoc = () => k >= chuoi.length ? null : pm.sendRequest({",
+                  "    url: base + '/api/admin/orders/' + id + '/status', method: 'PUT',",
+                  "    header: admin(),",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ status: chuoi[k] }) }",
+                  "  }, () => { k++; buoc(); });",
+                  "  buoc();",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// MATRIX — state",
+                  "const d = pm.iterationData;",
+                  "const id = d.get('case_id');",
+                  "const tu = d.get('tu_trang_thai');",
+                  "const toi = d.get('toi_trang_thai');",
+                  "const hopLe = d.get('hop_le') === 'co';",
+                  "const mong = Number(d.get('ma_mong_doi'));",
+                  "",
+                  "pm.test(`${id}: ${tu} -> ${toi} phải trả ${mong}`, () =>",
+                  "  pm.expect(pm.response.code).to.eql(mong));",
+                  "",
+                  "// Chỉ kiểm mã HTTP thì chưa đủ: có thể trả 400 mà vẫn ghi vào CSDL.",
+                  "// Phải đọc lại đơn để biết trạng thái THẬT SỰ được lưu là gì.",
+                  "const sauCung = hopLe ? toi : tu;",
+                  "pm.sendRequest({",
+                  "  url: pm.environment.get('baseUrl') + '/api/orders/' + pm.variables.get('donId'),",
+                  "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                  "}, (err, res) => pm.test(`${id}: trạng thái lưu trong CSDL phải là ${sauCung}`, () =>",
+                  "  pm.expect(res.json().status).to.eql(sauCung)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/orders/{{donId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders",
+                "{{donId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"{{toi_trang_thai}}\"}"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Đề mục 6:85 — mọi request phải mang header X-Student-Id.",
+          "// Đặt ở cấp collection nên không request nào có thể thiếu.",
+          "const sid = pm.environment.get('studentId') || '23127262';",
+          "pm.request.headers.upsert({ key: 'X-Student-Id', value: sid });",
+          "",
+          "// Đề mục 11:131 — TA đối chiếu bằng ảnh chụp Postman Console.",
+          "console.log('[X-Student-Id] ' + sid + '  ->  ' + pm.request.method + ' ' + pm.request.url.getPath());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Khẳng định chung cho mọi response của bộ test.",
+          "pm.test('[chung] response dưới 2 giây', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+          "pm.test('[chung] không phải lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

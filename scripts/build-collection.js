@@ -39,7 +39,10 @@ const STUDENT_ID = "23127262";
 const SOURCES = [
   { file: "api1-login.cases.js", name: "API1 — POST /api/login (Pool A, FR-02)" },
   { file: "api2-checkout.cases.js", name: "API2 — POST /api/checkout (Pool B, FR-08)" },
+  { file: "api3-order-status.cases.js", name: "API3 — PUT /api/admin/orders/:id/status (Pool C, FR-18)" },
 ];
+
+const OUT_DD = path.join(ROOT, "collections", "EShop-API3-Transitions.postman_collection.json");
 
 /** Gắn X-Student-Id cho MỌI request, và ghi ra Console để chụp màn hình làm bằng chứng. */
 const COLLECTION_PREREQUEST = [
@@ -141,6 +144,115 @@ function makeCollection(id, name, description, folders) {
   };
 }
 
+/**
+ * Collection data-driven cho ma trận chuyển trạng thái của API 3.
+ *
+ * VÌ SAO TÁCH RIÊNG: 25 ô của ma trận FR-10 dùng CHUNG một kịch bản — dựng đơn
+ * về trạng thái nguồn, gọi API chuyển sang trạng thái đích, kiểm mã HTTP và
+ * kiểm trạng thái LƯU TRONG CSDL. Chỉ có dữ liệu là khác. Viết 25 request giống
+ * hệt nhau thì vừa dài vừa dễ sai; một request lặp qua data/api3-transitions.csv
+ * là đúng bài toán mà Collection Runner sinh ra để giải.
+ *
+ * Chạy:  npx newman run collections/EShop-API3-Transitions.postman_collection.json \
+ *          -e environments/local.postman_environment.json -d data/api3-transitions.csv
+ */
+function makeDataDriven() {
+  const prereq = [
+    "// Dựng một đơn hàng MỚI cho mỗi dòng dữ liệu, rồi đẩy nó về trạng thái nguồn.",
+    "// Mỗi dòng một đơn riêng để 25 lượt chạy không ảnh hưởng lẫn nhau.",
+    "const duong = {",
+    "  pending:   [],",
+    "  confirmed: ['confirmed'],",
+    "  shipping:  ['confirmed', 'shipping'],",
+    "  delivered: ['confirmed', 'shipping', 'delivered'],",
+    "  canceled:  ['canceled'],",
+    "};",
+    "const base = pm.environment.get('baseUrl');",
+    "const sid = pm.environment.get('studentId');",
+    "const admin = () => ({ 'Content-Type': 'application/json', 'X-Student-Id': sid,",
+    "                       'Authorization': 'Bearer ' + pm.environment.get('adminToken') });",
+    "",
+    "pm.sendRequest({",
+    "  url: base + '/api/checkout', method: 'POST',",
+    "  header: { 'Content-Type': 'application/json', 'X-Student-Id': sid,",
+    "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+    "  body: { mode: 'raw', raw: JSON.stringify({ total_amount: 1000, shipping_address: '123 Le Loi' }) }",
+    "}, (err, res) => {",
+    "  const id = res.json().orderId;",
+    "  pm.variables.set('donId', id);",
+    "  const chuoi = duong[pm.iterationData.get('tu_trang_thai')] || [];",
+    "  let k = 0;",
+    "  const buoc = () => k >= chuoi.length ? null : pm.sendRequest({",
+    "    url: base + '/api/admin/orders/' + id + '/status', method: 'PUT',",
+    "    header: admin(),",
+    "    body: { mode: 'raw', raw: JSON.stringify({ status: chuoi[k] }) }",
+    "  }, () => { k++; buoc(); });",
+    "  buoc();",
+    "});",
+  ];
+
+  const tests = [
+    "const d = pm.iterationData;",
+    "const id = d.get('case_id');",
+    "const tu = d.get('tu_trang_thai');",
+    "const toi = d.get('toi_trang_thai');",
+    "const hopLe = d.get('hop_le') === 'co';",
+    "const mong = Number(d.get('ma_mong_doi'));",
+    "",
+    "pm.test(`${id}: ${tu} -> ${toi} phải trả ${mong}`, () =>",
+    "  pm.expect(pm.response.code).to.eql(mong));",
+    "",
+    "// Chỉ kiểm mã HTTP thì chưa đủ: có thể trả 400 mà vẫn ghi vào CSDL.",
+    "// Phải đọc lại đơn để biết trạng thái THẬT SỰ được lưu là gì.",
+    "const sauCung = hopLe ? toi : tu;",
+    "pm.sendRequest({",
+    "  url: pm.environment.get('baseUrl') + '/api/orders/' + pm.variables.get('donId'),",
+    "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+    "}, (err, res) => pm.test(`${id}: trạng thái lưu trong CSDL phải là ${sauCung}`, () =>",
+    "  pm.expect(res.json().status).to.eql(sauCung)));",
+  ];
+
+  return makeCollection(
+    "hw06-23127262-eshop-api3-transitions",
+    `EShop API3 — Ma trận chuyển trạng thái (${STUDENT_ID})`,
+    "Chạy data-driven trọn 25 ô của máy trạng thái FR-10. Cần file dữ liệu: " +
+      "npx newman run <file này> -e environments/local.postman_environment.json " +
+      "-d data/api3-transitions.csv",
+    [
+      {
+        name: "Chuẩn bị",
+        item: [
+          toItem({
+            id: "SETUP-DD", name: "Nạp token admin và token user", axis: "setup",
+            path: "/api/login", body: { email: "{{adminEmail}}", password: "{{adminPassword}}" },
+            tests: [
+              "pm.environment.set('adminToken', pm.response.json().token);",
+              "pm.sendRequest({",
+              "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+              "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+              "  body: { mode: 'raw', raw: JSON.stringify({ email: pm.environment.get('userEmail'), password: pm.environment.get('userPassword') }) }",
+              "}, (err, res) => pm.environment.set('token', res.json().token));",
+            ],
+          }),
+        ],
+      },
+      {
+        name: "Ma trận 5×5 (data-driven)",
+        item: [
+          toItem({
+            id: "MATRIX", name: "{{case_id}}: {{tu_trang_thai}} → {{toi_trang_thai}}",
+            axis: "state", method: "PUT",
+            path: "/api/admin/orders/{{donId}}/status",
+            headers: { Authorization: "Bearer {{adminToken}}" },
+            rawBody: '{"status": "{{toi_trang_thai}}"}',
+            prereq, tests,
+          }),
+        ],
+      },
+    ],
+  );
+}
+
 function main() {
   const all = [];
 
@@ -190,9 +302,12 @@ function main() {
     ) + "\n",
   );
 
+  fs.writeFileSync(OUT_DD, JSON.stringify(makeDataDriven(), null, 2) + "\n");
+
   console.log(`Đầy đủ  : ${countAll} request -> ${path.relative(ROOT, OUT_FULL)}`);
   console.log(`Hồi quy : ${countGreen} request -> ${path.relative(ROOT, OUT_GREEN)}`);
   console.log(`Đã tách ra ${countAll - countGreen} case đang bắt lỗi đã biết.`);
+  console.log(`Data-driven: 1 request x 25 dòng -> ${path.relative(ROOT, OUT_DD)}`);
 }
 
 main();
