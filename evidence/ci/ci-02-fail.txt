@@ -1,0 +1,181 @@
+runId: 32223024403
+kết luận: failure
+commit: 7c1cd9cc045e4e085fd8f4d6e314765df4931ab0
+lúc: 2026-08-19T06:20:47Z
+link: https://github.com/dinosauce-285/HW06-Software-Testing/actions/runs/32223024403
+tiêu đề: ci: demo a failing gate by un-quarantining TC-A2-033
+
+--- tóm tắt Newman trích từ log ---
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ `Using "atob" is deprecated. Use "require('atob')" ins
+  │ tead.`
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ `Using "atob" is deprecated. Use "require('atob')" ins
+  │ tead.`
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  GET /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/checkout'
+  │ '[X-Student-Id] 23127262  ->  POST /api/login'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/99
+  │ 9999/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/ab
+  │ c/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/0/
+  │ status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/-1
+  │ /status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/1.
+  │ 5/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/1%
+  │ 20OR%201=1/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/90
+  │ 07199254740991/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/99
+  │ 999999999999999999/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders//s
+  │ tatus'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ `Using "atob" is deprecated. Use "require('atob')" ins
+  │ tead.`
+  │ `Using "btoa" is deprecated. Use "require('btoa')" ins
+  │ tead.`
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  PUT /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  GET /api/admin/orders/{{
+  │ donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  POST /api/admin/orders/{
+  │ {donId}}/status'
+  │ '[X-Student-Id] 23127262  ->  DELETE /api/admin/orders
+  │ /{{donId}}/status'
+│                         │          executed │           failed │
+│              iterations │                 1 │                0 │
+│                requests │               278 │                0 │
+│            test-scripts │               242 │                0 │
+│      prerequest-scripts │               193 │                0 │
+│              assertions │               451 │                1 │
+│ total run duration: 7s                                         │
+│ total data received: 47.13kB (approx)                          │
+│ average response time: 17ms [min: 1ms, max: 357ms, s.d.: 52ms] │
+  #  failure         detail                                                                                                                  
+ 1.  AssertionError  phải từ chối vì không có gì để đặt                                                                                      
+                     inside "API2 — POST /api/checkout (Pool B, FR-08) / 3. Chuyển trạng thái / TC-A2-033 — Giỏ RỖNG thì không được tạo đơn" 

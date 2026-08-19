@@ -271,12 +271,9 @@ module.exports = [
   },
   {
     id: "TC-A2-033", name: "Giỏ RỖNG thì không được tạo đơn", axis: "state", origin: "ai",
-    // ─── DEMO CI/CD (đề mục 6:91) ────────────────────────────────────────
-    // Tạm gỡ `knownBug: "BUG-A2-03"` để case này lọt vào bộ hồi quy và làm
-    // pipeline ĐỎ với ĐÚNG MỘT case thất bại. Đây mô phỏng tình huống thật:
-    // ai đó tuyên bố đã sửa BUG-A2-03 nên gỡ case khỏi khu cách ly, nhưng lỗi
-    // vẫn còn — và cổng CI phải chặn lại.
-    // Commit ngay sau đây sẽ trả `knownBug` về chỗ cũ.
+    // Case này từng được tạm gỡ khỏi khu cách ly ở commit 7c1cd9c để làm lượt
+    // chạy CI ĐỎ theo yêu cầu đề mục 6:91 — xem docs/CI-CD-Report.md.
+    knownBug: "BUG-A2-03",
     prereq: userMoi(), // tài khoản mới -> giỏ chắc chắn rỗng
     headers: { Authorization: "Bearer {{coToken}}" },
     path: "/api/checkout", body: { total_amount: 200000, shipping_address: ADDR },
