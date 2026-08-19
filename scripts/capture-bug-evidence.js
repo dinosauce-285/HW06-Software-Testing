@@ -35,6 +35,9 @@ const RESET = "./scripts/reset-db.sh >/dev/null 2>&1";
 const ADMIN =
   `AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' ` +
   `-d '{"email":"admin@eshop.com","password":"Admin123!"}' | jq -r .token)`;
+const USER =
+  `T=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' ` +
+  `-d '{"email":"test@eshop.com","password":"Test1234!"}' | jq -r .token)`;
 
 const CASES = [
   {
@@ -147,6 +150,9 @@ printf '        thu mat khau DUNG -> HTTP '; curl -s -o /dev/null -w '%{http_cod
     ],
   },
 ];
+
+// Lỗi của API 2 để ở file riêng cho khỏi dài.
+CASES.push(...require("./bug-cases-api2.js"));
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 

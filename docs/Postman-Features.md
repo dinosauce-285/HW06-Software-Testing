@@ -29,6 +29,10 @@
 | 17 | **Chạy theo folder** (`--folder`) | Chạy riêng một trục khi đang gỡ lỗi | `npx newman run … --folder "3. Chuyển trạng thái"` |
 | 18 | **Hai collection từ một nguồn** | Bộ đầy đủ (bằng chứng bug, có fail) và bộ hồi quy (cổng CI, luôn xanh) | `scripts/build-collection.js` |
 | 19 | **Newman trong GitHub Actions** | Cổng CI tự dựng SUT rồi chạy bộ hồi quy *(mục 6:91)* | `.github/workflows/api-tests.yml` |
+| 20 | **Biến động (dynamic variable) tự sinh** | Mỗi case trạng thái tự tạo tài khoản riêng bằng `Date.now()` + số ngẫu nhiên, nên chạy lại bao nhiêu lần cũng không đụng nhau | `freshUser()`, `userMoi()` |
+| 21 | **Khẳng định bất đồng bộ lồng nhau** | Dựng tiền đề nhiều bước rồi mới khẳng định (tạo tài khoản → xoá tài khoản → gọi API bằng token cũ) | `TC-A2-E03`, `TC-A2-E04` |
+| 22 | **Gửi request song song trong script** | Bắn nhiều `pm.sendRequest` không chờ nhau để tạo tranh chấp đồng thời | `TC-A1-E03`, `TC-A2-E01` |
+| 23 | **Khẳng định trên hệ quả, không chỉ trên response** | Với endpoint ghi dữ liệu, oracle nằm ở bản ghi được tạo — đọc lại bằng `GET /api/orders/:id` rồi mới khẳng định | `docDon()` trong `tests/api2-checkout.cases.js` |
 
 ## 2. Ghi chú về cách dựng collection
 
@@ -44,7 +48,7 @@ import thẳng vào Postman GUI được.
 
 | Tính năng | Lý do |
 | --- | --- |
-| **Data-driven run** (Collection Runner + file CSV/JSON) | *Dự kiến làm ở API 2* — `POST /api/checkout` có `total_amount` và `shipping_address` hợp với việc lặp qua bảng dữ liệu. Ở API 1 các case khác nhau cả về **tiền đề** lẫn **khẳng định**, nhồi vào một file CSV sẽ phải viết logic rẽ nhánh trong test script — rối hơn là tách case |
+| **Data-driven run** (Collection Runner + file CSV/JSON) | *Chuyển sang API 3.* Làm xong API 2 mới thấy rõ: các case ở đây khác nhau **cả về tiền đề** (giỏ hàng dựng thế nào) **lẫn oracle** (đọc đơn hay đọc giỏ), nên nhồi vào một file CSV sẽ phải viết logic rẽ nhánh trong test script — rối hơn là tách case. API 3 (`PUT /api/admin/orders/:id/status`) mới thật sự hợp: 5 trạng thái × 5 trạng thái = **25 cặp chuyển đổi cùng một khuôn**, chỉ khác dữ liệu — đúng bài toán mà data-driven sinh ra để giải |
 | **Mock server** | *Dự kiến làm ở API 3* — dùng để dựng response mẫu cho các trạng thái đơn hàng mà SUT thật khó đưa vào |
 | **Monitor** | Cần workspace trên đám mây và SUT phải truy cập được từ Internet. SUT chạy `localhost` nên monitor sẽ không gọi tới được. Thay thế bằng lịch chạy trong GitHub Actions |
 | **Visualizer** | Cân nhắc cho bảng tổng kết trạng thái ở API 3 |

@@ -486,17 +486,11 @@ module.exports = [
   {
     id: "TC-A1-E02", name: "Liệt kê tài khoản qua kênh 403 — email thật lộ mình ra", axis: "extended", origin: "human",
     knownBug: "BUG-A1-07",
-    prereq: [
-      "// Bắn 2 lần sai vào email CÓ THẬT để đẩy nó vào trạng thái khóa.",
-      "let done = 0;",
-      "const wrong = () => pm.sendRequest({",
-      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
-      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
-      "  body: { mode: 'raw', raw: JSON.stringify({ email: pm.environment.get('userEmail'), password: 'SaiRoi000!' }) }",
-      "}, () => { if (++done < 2) wrong(); });",
-      "wrong();",
-    ],
-    path: "/api/login", body: { email: U, password: "SaiRoi000!" },
+    // Dùng tài khoản mới tạo chứ KHÔNG dùng tài khoản seed: case này cố tình đẩy
+    // tài khoản vào trạng thái khóa, mà khóa kéo dài 180 giây và không gỡ được.
+    // Nếu khóa tài khoản seed thì toàn bộ folder của API 2 chạy sau sẽ nhận 403.
+    prereq: freshUser(failLogins(2)),
+    path: "/api/login", rawBody: '{"email": "{{freshEmail}}", "password": "SaiRoi000!"}',
     tests: [
       "// Email THẬT giờ đang bị khóa. So với email GIẢ chịu đúng số lần sai như vậy:",
       "const thatCode = pm.response.code;",

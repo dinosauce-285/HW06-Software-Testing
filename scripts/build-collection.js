@@ -38,6 +38,7 @@ const STUDENT_ID = "23127262";
 
 const SOURCES = [
   { file: "api1-login.cases.js", name: "API1 — POST /api/login (Pool A, FR-02)" },
+  { file: "api2-checkout.cases.js", name: "API2 — POST /api/checkout (Pool B, FR-08)" },
 ];
 
 /** Gắn X-Student-Id cho MỌI request, và ghi ra Console để chụp màn hình làm bằng chứng. */
@@ -73,9 +74,13 @@ const AXIS_LABEL = {
 };
 
 function toRequest(tc) {
+  // tc.headers là các header riêng của case (chủ yếu là Authorization).
+  // X-Student-Id KHÔNG đặt ở đây — nó do pre-request script cấp collection gắn
+  // vào mọi request, xem COLLECTION_PREREQUEST.
+  const rieng = Object.entries(tc.headers || {}).map(([key, value]) => ({ key, value }));
   const req = {
     method: tc.method || "POST",
-    header: [{ key: "Content-Type", value: tc.contentType || "application/json" }],
+    header: [{ key: "Content-Type", value: tc.contentType || "application/json" }, ...rieng],
     url: {
       raw: "{{baseUrl}}" + tc.path,
       host: ["{{baseUrl}}"],

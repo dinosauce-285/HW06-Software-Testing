@@ -2917,14 +2917,24 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "// Bắn 2 lần sai vào email CÓ THẬT để đẩy nó vào trạng thái khóa.",
-                      "let done = 0;",
-                      "const wrong = () => pm.sendRequest({",
-                      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "const email = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('freshEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register',",
+                      "  method: 'POST',",
                       "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
-                      "  body: { mode: 'raw', raw: JSON.stringify({ email: pm.environment.get('userEmail'), password: 'SaiRoi000!' }) }",
-                      "}, () => { if (++done < 2) wrong(); });",
-                      "wrong();"
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06 State', email: email, password: 'Test1234!' }) }",
+                      "}, (err, res) => {",
+                      "  if (err || res.code !== 200) console.log('Không tạo được tài khoản nền: ' + (err || res.code));",
+                      "  let done = 0;",
+                      "  const wrong = () => pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/login',",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'SaiRoi000!' }) }",
+                      "  }, () => { if (++done < 2) wrong(); });",
+                      "  wrong();",
+                      "});"
                     ]
                   }
                 },
@@ -2968,7 +2978,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"SaiRoi000!\"\n}"
+                  "raw": "{\"email\": \"{{freshEmail}}\", \"password\": \"SaiRoi000!\"}"
                 }
               }
             },
@@ -3350,6 +3360,3693 @@
                 "body": {
                   "mode": "raw",
                   "raw": "{\"email\": \"{{freshEmail}}\", \"password\": \"SaiRoi000!\"}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "API2 — POST /api/checkout (Pool B, FR-08)",
+      "item": [
+        {
+          "name": "0. Setup — nạp token dùng chung",
+          "item": [
+            {
+              "name": "SETUP-A2 — Đăng nhập user thường, lưu token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// SETUP-A2 — setup",
+                      "pm.test('đăng nhập thành công', () => pm.response.to.have.status(200));",
+                      "pm.environment.set('token', pm.response.json().token);",
+                      "pm.environment.set('userId', pm.response.json().user.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "1. Phân vùng miền",
+          "item": [
+            {
+              "name": "TC-A2-001 — total_amount khớp giỏ hàng",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-001 — domain",
+                      "pm.test('tạo đơn thành công', () => pm.response.to.have.status(200));",
+                      "pm.environment.set('orderId', pm.response.json().orderId);",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"đơn ghi đúng tổng giỏ hàng\", () => { pm.expect(don.total_amount).to.eql(200000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-002 — total_amount thấp hơn giỏ rất nhiều → đơn vẫn phải ghi tổng giỏ",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-002 — domain",
+                      "pm.test('tạo đơn thành công', () => pm.response.to.have.status(200));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"đơn ghi tổng giỏ chứ không phải số client gửi\", () => { pm.expect(don.total_amount, 'backend phải tự tính lại từ giỏ (FR-08)').to.eql(200000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 1,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-003 — total_amount bằng 0 → đơn vẫn phải ghi tổng giỏ",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-003 — domain",
+                      "pm.test('tạo đơn thành công', () => pm.response.to.have.status(200));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"đơn ghi tổng giỏ chứ không phải số client gửi\", () => { pm.expect(don.total_amount, 'backend phải tự tính lại từ giỏ (FR-08)').to.eql(200000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 0,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-004 — total_amount số âm → đơn vẫn phải ghi tổng giỏ",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-004 — domain",
+                      "pm.test('tạo đơn thành công', () => pm.response.to.have.status(200));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"đơn ghi tổng giỏ chứ không phải số client gửi\", () => { pm.expect(don.total_amount, 'backend phải tự tính lại từ giỏ (FR-08)').to.eql(200000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": -500000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-005 — total_amount cao hơn giỏ → đơn vẫn phải ghi tổng giỏ",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-005 — domain",
+                      "pm.test('tạo đơn thành công', () => pm.response.to.have.status(200));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"đơn ghi tổng giỏ chứ không phải số client gửi\", () => { pm.expect(don.total_amount, 'backend phải tự tính lại từ giỏ (FR-08)').to.eql(200000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 999999999,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-006 — total_amount sai kiểu — chuỗi chữ \"abc\"",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-006 — domain",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"giá trị sai kiểu không được lọt vào cột số tiền\", () => { pm.expect(don.total_amount, 'cột số tiền chỉ được chứa số ≥ 0').to.be.a('number').and.to.be.at.least(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": \"abc\", \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-007 — total_amount sai kiểu — chuỗi số \"200000\"",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-007 — domain",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"giá trị sai kiểu không được lọt vào cột số tiền\", () => { pm.expect(don.total_amount, 'cột số tiền chỉ được chứa số ≥ 0').to.be.a('number').and.to.be.at.least(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": \"200000\", \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-008 — total_amount sai kiểu — boolean true",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-008 — domain",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"giá trị sai kiểu không được lọt vào cột số tiền\", () => { pm.expect(don.total_amount, 'cột số tiền chỉ được chứa số ≥ 0').to.be.a('number').and.to.be.at.least(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": true, \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-010 — total_amount sai kiểu — null",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-010 — domain",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"giá trị sai kiểu không được lọt vào cột số tiền\", () => { pm.expect(don.total_amount, 'cột số tiền chỉ được chứa số ≥ 0').to.be.a('number').and.to.be.at.least(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": null, \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-011 — total_amount sai kiểu — số thực 200000.55",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-011 — domain",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"giá trị sai kiểu không được lọt vào cột số tiền\", () => { pm.expect(don.total_amount, 'cột số tiền chỉ được chứa số ≥ 0').to.be.a('number').and.to.be.at.least(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 200000.55, \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-012 — total_amount sai kiểu — ký hiệu khoa học 2e5",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-012 — domain",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"giá trị sai kiểu không được lọt vào cột số tiền\", () => { pm.expect(don.total_amount, 'cột số tiền chỉ được chứa số ≥ 0').to.be.a('number').and.to.be.at.least(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 2e5, \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-013 — total_amount sai kiểu — số tràn 1e308",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-013 — domain",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"giá trị sai kiểu không được lọt vào cột số tiền\", () => { pm.expect(don.total_amount, 'cột số tiền chỉ được chứa số ≥ 0').to.be.a('number').and.to.be.at.least(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 1e308, \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-009 — Thiếu hẳn total_amount — backend tự tính thì vẫn phải thành công",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-009 — domain",
+                      "pm.test('vẫn tạo được đơn', () => pm.response.to.have.status(200));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"đơn ghi tổng giỏ dù client không gửi số nào\", () => { pm.expect(don.total_amount).to.eql(200000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-014 — Địa chỉ hợp lệ",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-014 — domain",
+                      "pm.test('tạo đơn thành công', () => pm.response.to.have.status(200));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"địa chỉ lưu đúng nguyên văn\", () => { pm.expect(don.shipping_address).to.eql(\"123 Le Loi, Q1, TP.HCM\") });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-015 — Địa chỉ rỗng — đặc tả im lặng nên chỉ khẳng định không sập",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-015 — domain",
+                      "// Audit: AI đòi 400, nhưng FR-08 KHÔNG hề nói trường này bắt buộc.",
+                      "// Hạ xuống mức khẳng định robustness; chuyện bắt buộc ghi ở mục khuyến nghị.",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 200000, \"shipping_address\": \"\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-016 — Địa chỉ chỉ có khoảng trắng — đặc tả im lặng nên chỉ khẳng định không sập",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-016 — domain",
+                      "// Audit: AI đòi 400, nhưng FR-08 KHÔNG hề nói trường này bắt buộc.",
+                      "// Hạ xuống mức khẳng định robustness; chuyện bắt buộc ghi ở mục khuyến nghị.",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 200000, \"shipping_address\": \"     \"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-021 — Địa chỉ sai kiểu — số — đặc tả im lặng nên chỉ khẳng định không sập",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-021 — domain",
+                      "// Audit: AI đòi 400, nhưng FR-08 KHÔNG hề nói trường này bắt buộc.",
+                      "// Hạ xuống mức khẳng định robustness; chuyện bắt buộc ghi ở mục khuyến nghị.",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 200000, \"shipping_address\": 12345}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-022 — Địa chỉ null — đặc tả im lặng nên chỉ khẳng định không sập",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-022 — domain",
+                      "// Audit: AI đòi 400, nhưng FR-08 KHÔNG hề nói trường này bắt buộc.",
+                      "// Hạ xuống mức khẳng định robustness; chuyện bắt buộc ghi ở mục khuyến nghị.",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 200000, \"shipping_address\": null}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-017 — Thiếu hẳn trường shipping_address",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-017 — domain",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-019 — Địa chỉ có dấu tiếng Việt — không được vỡ mã hóa",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-019 — domain",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"dấu tiếng Việt nguyên vẹn\", () => { pm.expect(don.shipping_address).to.eql('số 5, đường Nguyễn Huệ, Quận 1') });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"số 5, đường Nguyễn Huệ, Quận 1\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-020 — Địa chỉ có emoji — ký tự ngoài BMP",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-020 — domain",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"emoji không bị cắt theo byte\", () => { pm.expect(don.shipping_address).to.include('🏠') });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi 🏠\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-023 — Địa chỉ nhiều dòng — giữ nguyên ký tự xuống dòng",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-023 — domain",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"ký tự xuống dòng được giữ\", () => { pm.expect(don.shipping_address).to.include('\\n') });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\":200000,\"shipping_address\":\"123 Le Loi\\n\\n\\nQ1\"}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Giá trị biên",
+          "item": [
+            {
+              "name": "TC-A2-018 — Địa chỉ 5 000 ký tự — phải lưu nguyên độ dài",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":2}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-018 — boundary",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"địa chỉ không bị cắt bớt âm thầm\", () => { pm.expect(don.shipping_address.length).to.eql(5000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\":200000,\"shipping_address\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-024 — Giỏ tối thiểu — 1 sản phẩm, số lượng 1",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-024 — boundary",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"đơn = 1 × 100 000\", () => { pm.expect(don.total_amount).to.eql(100000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-025 — Số lượng 0 trong giỏ → tổng đơn phải là 0",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":0}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-025 — boundary",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"tổng tính từ giỏ, không lấy số client gửi\", () => { pm.expect(don.total_amount).to.eql(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 999999,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-026 — Số lượng âm trong giỏ → tổng đơn không được âm",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":-5}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-026 — boundary",
+                      "// Audit: đổi oracle từ 'checkout trả 400' sang 'tổng đơn không âm'.",
+                      "// Ràng buộc số lượng thuộc endpoint giỏ hàng, không thuộc checkout.",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"không tạo được đơn có tổng âm\", () => { pm.expect(don.total_amount).to.be.at.least(0) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-027 — Số lượng rất lớn — kiểm tràn số",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1000000}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-027 — boundary",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"tổng = 100 000 × 1 000 000, không tràn\", () => { pm.expect(don.total_amount).to.eql(100000000000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-029 — Giỏ nhiều dòng — tổng phải là tổng cả ba",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"A\",\"price\":100000,\"quantity\":1},{\"id\":2,\"name\":\"B\",\"price\":250000,\"quantity\":2},{\"id\":3,\"name\":\"C\",\"price\":50000,\"quantity\":3}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-029 — boundary",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"tổng = 100k + 500k + 150k\", () => { pm.expect(don.total_amount).to.eql(750000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 1,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-030 — Địa chỉ 1 ký tự",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-030 — boundary",
+                      "pm.test('không được là lỗi 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"a\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Chuyển trạng thái",
+          "item": [
+            {
+              "name": "TC-A2-031 — Đơn mới phải ở trạng thái pending — điểm vào FR-10",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-031 — state",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"trạng thái khởi tạo là pending\", () => { pm.expect(don.status).to.eql('pending') });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-032 — Giỏ hàng phải bị xóa sau khi thanh toán (D4)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-032 — state",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart',",
+                      "  header: { 'Authorization': 'Bearer ' + pm.environment.get('token'), 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => pm.test('giỏ hàng rỗng sau khi thanh toán', () =>",
+                      "  pm.expect(res.json()).to.be.an('array').that.is.empty));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-033 — Giỏ RỖNG thì không được tạo đơn",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'co-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('coEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06', email: email, password: 'Test1234!' }) }",
+                      "}, () => pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'Test1234!' }) }",
+                      "}, (e, r) => {",
+                      "  pm.variables.set('coToken', r.json().token);",
+                      "  pm.variables.set('coId', r.json().user.id);",
+                      "}));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-033 — state",
+                      "pm.test('phải từ chối vì không có gì để đặt', () => pm.expect(pm.response.code).to.be.oneOf([400, 422]));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{coToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-035 — Đơn phải nằm trong lịch sử của đúng người dùng",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-035 — state",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/my-orders',",
+                      "  header: { 'Authorization': 'Bearer ' + pm.environment.get('token'), 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const ds = res.json();",
+                      "  pm.test('đơn mới có trong my-orders', () => pm.expect(ds.map(o => o.id)).to.include(oid));",
+                      "  pm.test('my-orders chỉ chứa đơn của chính mình', () =>",
+                      "    pm.expect([...new Set(ds.map(o => o.user_id))]).to.eql([Number(pm.environment.get('userId'))]));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-037 — Thêm cùng sản phẩm hai lần — tổng không được nhân đôi nhầm",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1},{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-037 — state",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"tổng = 2 × 100 000 (FR-07 gộp dòng)\", () => { pm.expect(don.total_amount).to.eql(200000) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 1,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-039 — Đơn phải xuất hiện ở danh sách phía admin",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-039 — state",
+                      "// Audit bổ sung tiền đề: cần token admin, lấy từ folder Setup của API 1.",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/admin/orders',",
+                      "  header: { 'Authorization': 'Bearer ' + pm.environment.get('adminToken'), 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => pm.test('admin nhìn thấy đơn mới', () =>",
+                      "  pm.expect(res.json().map(o => o.id)).to.include(oid)));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Bảo mật",
+          "item": [
+            {
+              "name": "TC-A2-040 — SEC-02 — không có header Authorization",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-040 — security",
+                      "pm.test('phải từ chối', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));",
+                      "pm.test('không tạo ra đơn hàng nào', () => pm.expect(pm.response.text()).to.not.include('orderId'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-041 — SEC-02 — token sai định dạng",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-041 — security",
+                      "pm.test('phải từ chối', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));",
+                      "pm.test('không tạo ra đơn hàng nào', () => pm.expect(pm.response.text()).to.not.include('orderId'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer abc.def"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-042 — SEC-02 — token đúng cấu trúc nhưng sai chữ ký",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-042 — security",
+                      "pm.test('phải từ chối', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));",
+                      "pm.test('không tạo ra đơn hàng nào', () => pm.expect(pm.response.text()).to.not.include('orderId'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6ImFkbWluIn0.chuKySAI"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-043 — SEC-02 — header Authorization rỗng",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-043 — security",
+                      "pm.test('phải từ chối', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));",
+                      "pm.test('không tạo ra đơn hàng nào', () => pm.expect(pm.response.text()).to.not.include('orderId'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": ""
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-044 — SEC-02 — thiếu tiền tố Bearer",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-044 — security",
+                      "pm.test('phải từ chối', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));",
+                      "pm.test('không tạo ra đơn hàng nào', () => pm.expect(pm.response.text()).to.not.include('orderId'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-045 — Mass assignment — client tự đặt user_id của người khác",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-045 — security",
+                      "pm.test('tạo đơn thành công', () => pm.response.to.have.status(200));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"trường thuộc quyền server không bị client ghi đè\", () => { pm.expect(don.status, 'trạng thái do server quyết định').to.eql('pending'); pm.expect(don.user_id, 'chủ đơn là chủ token').to.eql(Number(pm.environment.get('userId'))) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 100000, \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\", \"user_id\": 1}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-046 — Mass assignment — client tự đặt status delivered",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-046 — security",
+                      "pm.test('tạo đơn thành công', () => pm.response.to.have.status(200));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"trường thuộc quyền server không bị client ghi đè\", () => { pm.expect(don.status, 'trạng thái do server quyết định').to.eql('pending'); pm.expect(don.user_id, 'chủ đơn là chủ token').to.eql(Number(pm.environment.get('userId'))) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 100000, \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\", \"status\": \"delivered\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-047 — Mass assignment — client tự đặt id đơn hàng tự chọn",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-047 — security",
+                      "pm.test('tạo đơn thành công', () => pm.response.to.have.status(200));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"trường thuộc quyền server không bị client ghi đè\", () => { pm.expect(don.status, 'trạng thái do server quyết định').to.eql('pending'); pm.expect(don.user_id, 'chủ đơn là chủ token').to.eql(Number(pm.environment.get('userId'))) });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": 100000, \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\", \"id\": 999999}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-048 — SQL injection trong shipping_address",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-048 — security",
+                      "pm.test('không sập', () => pm.expect(pm.response.code).to.be.below(500));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"chuỗi lưu nguyên văn, không được thực thi\", () => { pm.expect(don.shipping_address).to.include('DROP TABLE') });",
+                      "});",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/1',",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => pm.test('bảng orders vẫn còn', () => pm.expect(res.code).to.not.eql(500)));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\":100000,\"shipping_address\":\"', 'x'); DROP TABLE orders;--\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-049 — SEC-04 — payload XSS lưu nguyên văn, response là JSON",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-049 — security",
+                      "// Audit chốt lại: escape là việc của tầng hiển thị (SEC-04). Ở tầng API chỉ",
+                      "// khẳng định response là JSON hợp lệ và chuỗi được lưu nguyên vẹn.",
+                      "pm.test('Content-Type là JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const don = res.json();",
+                      "  pm.test(\"chuỗi lưu nguyên văn\", () => { pm.expect(don.shipping_address).to.eql('<script>alert(1)</script>') });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"<script>alert(1)</script>\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-050 — IDOR — đọc đơn hàng mà không cần token",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-050 — security",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => pm.test('đọc đơn mà không có token phải bị chặn', () =>",
+                      "  pm.expect(res.code).to.be.oneOf([401, 403])));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Schema & HTTP",
+          "item": [
+            {
+              "name": "TC-A2-052 — Response 200 khớp schema",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-052 — schema",
+                      "pm.test('khớp schema {message, orderId}', () => pm.response.to.have.jsonSchema({",
+                      "  type: 'object', required: ['message', 'orderId'],",
+                      "  properties: { message: { type: 'string' }, orderId: { type: 'integer', minimum: 1 } }",
+                      "}));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-053 — Đơn hàng khớp schema — total_amount là số ≥ 0",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-053 — schema",
+                      "const oid = pm.response.json().orderId;",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + oid,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => pm.test('đơn hàng khớp schema', () => {",
+                      "  const don = res.json();",
+                      "  pm.expect(don.total_amount, 'cột số tiền').to.be.a('number');",
+                      "  pm.expect(don.status).to.be.oneOf(['pending','confirmed','shipping','delivered','canceled']);",
+                      "}));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\": \"abc\", \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-056 — Sai method GET /api/checkout",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-056 — schema",
+                      "pm.test('trả 404 hoặc 405', () => pm.expect(pm.response.code).to.be.oneOf([404, 405]));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "TC-A2-057 — Sai method PUT /api/checkout",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-057 — schema",
+                      "pm.test('trả 404 hoặc 405', () => pm.expect(pm.response.code).to.be.oneOf([404, 405]));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "TC-A2-058 — Body JSON hỏng",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-058 — schema",
+                      "pm.test('trả 400', () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"total_amount\":"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "6. Tự bổ sung (bước 3)",
+          "item": [
+            {
+              "name": "TC-A2-E01 — Thanh toán 5 lần đồng thời chỉ được sinh 1 đơn",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'co-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('coEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06', email: email, password: 'Test1234!' }) }",
+                      "}, () => pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'Test1234!' }) }",
+                      "}, (e, r) => {",
+                      "  pm.variables.set('coToken', r.json().token);",
+                      "  pm.variables.set('coId', r.json().user.id);",
+                      "  // Nạp giỏ rồi bắn 4 request thanh toán SONG SONG; request chính là cái thứ 5.",
+                      "  pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "              'Authorization': 'Bearer ' + r.json().token },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ id: 1, name: 'iPhone', price: 100000, quantity: 2 }) }",
+                      "  }, () => { for (let k = 0; k < 4; k++) pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/checkout', method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "              'Authorization': 'Bearer ' + r.json().token },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ total_amount: 200000, shipping_address: '123 Le Loi' }) }",
+                      "  }, () => {}); });",
+                      "}));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-E01 — extended",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/my-orders',",
+                      "  header: { 'Authorization': 'Bearer ' + pm.variables.get('coToken'), 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => pm.test('cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: ' + res.json().length + ')', () =>",
+                      "  pm.expect(res.json().length).to.eql(1)));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{coToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 200000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-E02 — Không duyệt tuần tự được đơn hàng của người khác",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Mỗi case tự nạp giỏ của mình. Giỏ nằm trong RAM và KHÔNG bị xoá sau khi",
+                      "// thanh toán (BUG-A2-02), nên phải coi giỏ là trạng thái bẩn giữa các case.",
+                      "const items = [{\"id\":1,\"name\":\"iPhone\",\"price\":100000,\"quantity\":1}];",
+                      "let i = 0;",
+                      "const them = () => i >= items.length ? null : pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId'),",
+                      "            'Authorization': 'Bearer ' + pm.environment.get('token') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify(items[i]) }",
+                      "}, () => { i++; them(); });",
+                      "them();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-E02 — extended",
+                      "// Duyệt từ id 1 tới id của đơn vừa tạo, KHÔNG gửi token nào.",
+                      "const oid = pm.response.json().orderId;",
+                      "let doc = 0, xong = 0;",
+                      "const n = Math.min(oid, 5);",
+                      "for (let i = 1; i <= n; i++) pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/orders/' + i,",
+                      "  header: { 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  if (res && res.code === 200 && res.json().shipping_address) doc++;",
+                      "  if (++xong === n) pm.test('không đơn nào bị lộ khi duyệt tuần tự (lộ ' + doc + '/' + n + ')', () =>",
+                      "    pm.expect(doc).to.eql(0));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 100000,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-E03 — Token của tài khoản đã bị xóa không được đặt hàng",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'co-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('coEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06', email: email, password: 'Test1234!' }) }",
+                      "}, () => pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'Test1234!' }) }",
+                      "}, (e, r) => {",
+                      "  pm.variables.set('coToken', r.json().token);",
+                      "  pm.variables.set('coId', r.json().user.id);",
+                      "  // Xoá luôn tài khoản vừa tạo bằng quyền admin, giữ lại token cũ.",
+                      "  pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/admin/users/' + r.json().user.id, method: 'DELETE',",
+                      "    header: { 'Authorization': 'Bearer ' + pm.environment.get('adminToken'), 'X-Student-Id': pm.environment.get('studentId') }",
+                      "  }, () => {});",
+                      "}));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-E03 — extended",
+                      "pm.test('token của tài khoản đã xóa phải bị từ chối', () =>",
+                      "  pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{coToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 9999,\n  \"shipping_address\": \"nowhere\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-E04 — Không được tồn tại đơn hàng mồ côi (khóa ngoại)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'co-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('coEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06', email: email, password: 'Test1234!' }) }",
+                      "}, () => pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'Test1234!' }) }",
+                      "}, (e, r) => {",
+                      "  pm.variables.set('coToken', r.json().token);",
+                      "  pm.variables.set('coId', r.json().user.id);",
+                      "  pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/admin/users/' + r.json().user.id, method: 'DELETE',",
+                      "    header: { 'Authorization': 'Bearer ' + pm.environment.get('adminToken'), 'X-Student-Id': pm.environment.get('studentId') }",
+                      "  }, () => {});",
+                      "}));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-E04 — extended",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/admin/orders',",
+                      "  header: { 'Authorization': 'Bearer ' + pm.environment.get('adminToken'), 'X-Student-Id': pm.environment.get('studentId') }",
+                      "}, (err, res) => {",
+                      "  const moCoi = res.json().filter(o => o.user_name === null);",
+                      "  pm.test('không có đơn nào trỏ tới người dùng không tồn tại (thấy ' + moCoi.length + ')', () =>",
+                      "    pm.expect(moCoi.length).to.eql(0));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{coToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 9999,\n  \"shipping_address\": \"nowhere\"\n}"
+                }
+              }
+            },
+            {
+              "name": "TC-A2-E05 — Tài khoản đang bị khóa không được đặt hàng bằng token cũ",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const email = 'co-' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '@hw06.local';",
+                      "pm.variables.set('coEmail', email);",
+                      "pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/register', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ name: 'HW06', email: email, password: 'Test1234!' }) }",
+                      "}, () => pm.sendRequest({",
+                      "  url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'Test1234!' }) }",
+                      "}, (e, r) => {",
+                      "  pm.variables.set('coToken', r.json().token);",
+                      "  pm.variables.set('coId', r.json().user.id);",
+                      "  // Lấy token xong mới khoá tài khoản: sai mật khẩu liên tiếp cho tới khi khoá.",
+                      "  let d = 0;",
+                      "  const sai = () => pm.sendRequest({",
+                      "    url: pm.environment.get('baseUrl') + '/api/login', method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json', 'X-Student-Id': pm.environment.get('studentId') },",
+                      "    body: { mode: 'raw', raw: JSON.stringify({ email: email, password: 'SaiRoi000!' }) }",
+                      "  }, () => { if (++d < 3) sai(); });",
+                      "  sai();",
+                      "}));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// TC-A2-E05 — extended",
+                      "pm.test('tài khoản bị khóa thì token cũ cũng phải mất hiệu lực', () =>",
+                      "  pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{coToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"total_amount\": 1,\n  \"shipping_address\": \"123 Le Loi, Q1, TP.HCM\"\n}"
                 }
               }
             }
