@@ -1,0 +1,124 @@
+﻿API,Endpoint,Pool,FR,Mã case,Trục kiểm thử,Mô tả,Nguồn,Số khẳng định,Kết quả,Mã lỗi,Chi tiết khẳng định thất bại
+API1,POST /api/login,A,FR-02,SETUP-01,Chuẩn bị,Lấy token admin,Tự bổ sung,3,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-001,Phân vùng miền,Email hợp lệ đã đăng ký + mật khẩu đúng,AI sinh,5,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-002,Phân vùng miền,Email đúng định dạng nhưng chưa đăng ký,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-003,Phân vùng miền,Email thiếu ký tự @,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-004,Phân vùng miền,Email thiếu phần domain,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-005,Phân vùng miền,Email thiếu phần local,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-006,Phân vùng miền,Email thiếu TLD,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-007,Phân vùng miền,Email có hai dấu @,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-008,Phân vùng miền,Email là chuỗi rỗng,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-009,Phân vùng miền,Thiếu hẳn trường email,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-010,Phân vùng miền,Email chỉ gồm khoảng trắng,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-011,Phân vùng miền,Email có khoảng trắng thừa hai đầu — SUT không trim,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-012,Phân vùng miền,Email viết HOA — SUT phân biệt hoa/thường,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-013,Phân vùng miền,Email sai kiểu — số,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-014,Phân vùng miền,Email là null,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-015,Phân vùng miền,Mật khẩu đúng,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-016,Phân vùng miền,Mật khẩu sai,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-017,Phân vùng miền,Mật khẩu là chuỗi rỗng,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-018,Phân vùng miền,Thiếu hẳn trường password,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-019,Phân vùng miền,Mật khẩu chỉ gồm khoảng trắng,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-020,Phân vùng miền,Mật khẩu sai hoa/thường — phải bị từ chối,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-021,Phân vùng miền,Mật khẩu sai kiểu — số,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-022,Phân vùng miền,Mật khẩu là null,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-023,Phân vùng miền,Mật khẩu đúng nhưng của TÀI KHOẢN KHÁC,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-024,Giá trị biên,Mật khẩu sai với độ dài dưới ngưỡng FR-01 (7 ký tự),AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-026,Giá trị biên,Mật khẩu 1 000 ký tự — không được làm sập server,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-027,Giá trị biên,Email dài 320 ký tự — biên trên RFC 5321,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-028,Giá trị biên,Email 321 ký tự — vượt biên trên,AI sinh,3,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-029,Giá trị biên,Phần local dài 1 ký tự — biên dưới,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-030,Giá trị biên,Body JSON rỗng hoàn toàn,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-031,Chuyển trạng thái,Sai 1 lần → bộ đếm phải bằng ĐÚNG 1 (C3),AI sinh,12,FAIL,BUG-A1-02,bộ đếm tăng đúng 1 đơn vị (FR-02) | bộ đếm tăng đúng 1 đơn vị (FR-02) | bộ đếm tăng đúng 1 đơn vị (FR-02)
+API1,POST /api/login,A,FR-02,TC-A1-032,Chuyển trạng thái,"Sai 2 lần → CHƯA được khóa, mật khẩu đúng vẫn vào được (C4)",AI sinh,16,FAIL,BUG-A1-02,sai 2 lần chưa đủ để khóa — đăng nhập đúng phải thành công | không bị trả 403 | sai 2 lần chưa đủ để khóa — đăng nhập đúng phải thành công | không bị trả 403 | sai 2 lần chưa đủ để khóa — đăng nhập đúng phải thành công | không bị trả 403 | sai 2 lần chưa đủ để khóa — đăng nhập đúng phải thành công | không bị trả 403
+API1,POST /api/login,A,FR-02,TC-A1-033,Chuyển trạng thái,Sai 3 lần → chuyển sang trạng thái LOCKED,AI sinh,12,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-034,Chuyển trạng thái,Đang LOCKED + mật khẩu ĐÚNG → vẫn phải chặn,AI sinh,15,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-035,Chuyển trạng thái,Thời lượng khóa phải là 30 giây (C4),AI sinh,24,FAIL,BUG-A1-03,khóa không quá 30 giây (FR-02) | khóa không quá 30 giây (FR-02) | khóa không quá 30 giây (FR-02) | khóa không quá 30 giây (FR-02) | khóa không quá 30 giây (FR-02) | khóa không quá 30 giây (FR-02)
+API1,POST /api/login,A,FR-02,TC-A1-036,Chuyển trạng thái,Đăng nhập đúng phải reset bộ đếm về 0,AI sinh,16,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-037,Chuyển trạng thái,Khóa một tài khoản KHÔNG lan sang tài khoản khác,AI sinh,15,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-038,Chuyển trạng thái,Sai 5 lần → thời gian khóa không cộng dồn vô hạn,AI sinh,32,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-039,Chuyển trạng thái,Sai 3 lần với email KHÔNG tồn tại → không lộ sự tồn tại,AI sinh,12,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-040,Bảo mật,SQL injection — tautology OR '1'='1,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-041,Bảo mật,SQL injection — chèn chú thích để bỏ qua mật khẩu,AI sinh,5,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-042,Bảo mật,Dấu nháy đơn lẻ trong email — không được lộ lỗi CSDL,AI sinh,5,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-043,Bảo mật,SQL injection ở trường password,AI sinh,8,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-044,Bảo mật,SEC-01 — response TUYỆT ĐỐI không được chứa mật khẩu,AI sinh,5,FAIL,BUG-A1-01,response không chứa trường password | response không chứa mật khẩu dạng plaintext ở bất kỳ đâu
+API1,POST /api/login,A,FR-02,TC-A1-045,Bảo mật,SEC-02 — token đúng cấu trúc JWT ba phần,AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-046,Bảo mật,SEC-02 — JWT phải có hạn dùng (claim exp),AI sinh,3,FAIL,BUG-A1-04,token có claim exp — không được dùng vĩnh viễn
+API1,POST /api/login,A,FR-02,TC-A1-047,Bảo mật,SEC-02 — payload JWT không chứa dữ liệu nhạy cảm,AI sinh,3,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-048,Bảo mật,C5 — email không tồn tại và sai mật khẩu phải trả GIỐNG NHAU,AI sinh,12,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-049,Bảo mật,C5 — kênh phụ thời gian không được tiết lộ email có tồn tại,AI sinh,93,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-050,Bảo mật,"SEC-04 — payload XSS trong email trả JSON, không trả HTML",AI sinh,5,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-051,Bảo mật,"Injection kiểu đối tượng — {""$ne"": null}",AI sinh,4,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-052,Schema & HTTP,Response 200 khớp JSON Schema của đặc tả,AI sinh,3,FAIL,BUG-A1-01,response thỏa mãn schema (mệnh đề not.required chặn SEC-01)
+API1,POST /api/login,A,FR-02,TC-A1-053,Schema & HTTP,user.id phải là số nguyên,AI sinh,3,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-054,Schema & HTTP,user.role chỉ nhận 'user' hoặc 'admin',AI sinh,3,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-055,Schema & HTTP,"Response lỗi 401 phải là JSON, không phải HTML",AI sinh,10,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-056,Schema & HTTP,Sai method GET — response vẫn phải là JSON của API,AI sinh,4,FAIL,BUG-A1-06,Content-Type là JSON chứ không phải HTML
+API1,POST /api/login,A,FR-02,TC-A1-057,Schema & HTTP,Sai method PUT,AI sinh,3,PASS,,
+API1,POST /api/login,A,FR-02,TC-A1-059,Schema & HTTP,Body sai cú pháp JSON → 400 kèm thân JSON,AI sinh,4,FAIL,BUG-A1-06,Content-Type là JSON chứ không phải HTML
+API1,POST /api/login,A,FR-02,TC-A1-060,Schema & HTTP,"Content-Type: text/plain → phải 400/415, không được 500",AI sinh,4,FAIL,BUG-A1-05,[chung] không phải lỗi 5xx | trả 400 hoặc 415 | không được là lỗi 5xx
+API1,POST /api/login,A,FR-02,TC-A1-E02,Tự bổ sung,Liệt kê tài khoản qua kênh 403 — email thật lộ mình ra,Tự bổ sung,15,FAIL,BUG-A1-07,email thật và email giả phải trả CÙNG mã trạng thái (C5) | email thật và email giả phải trả CÙNG mã trạng thái (C5) | email thật và email giả phải trả CÙNG mã trạng thái (C5) | email thật và email giả phải trả CÙNG mã trạng thái (C5) | email thật và email giả phải trả CÙNG mã trạng thái (C5)
+API1,POST /api/login,A,FR-02,TC-A1-E06,Tự bổ sung,Thông báo khi bị khóa không được nói thẳng lý do (C5),Tự bổ sung,20,FAIL,BUG-A1-07,thông báo không được tiết lộ tài khoản bị khóa | thông báo không được tiết lộ tài khoản bị khóa | thông báo không được tiết lộ tài khoản bị khóa | thông báo không được tiết lộ tài khoản bị khóa | thông báo không được tiết lộ tài khoản bị khóa
+API1,POST /api/login,A,FR-02,TC-A1-E03,Tự bổ sung,Đồng thời — 5 lần sai song song không được làm mất cập nhật bộ đếm,Tự bổ sung,24,FAIL,BUG-A1-08,đồng thời không làm mất cập nhật bộ đếm | đồng thời không làm mất cập nhật bộ đếm | đồng thời không làm mất cập nhật bộ đếm | đồng thời không làm mất cập nhật bộ đếm | đồng thời không làm mất cập nhật bộ đếm | đồng thời không làm mất cập nhật bộ đếm | đồng thời không làm mất cập nhật bộ đếm | đồng thời không làm mất cập nhật bộ đếm
+API1,POST /api/login,A,FR-02,TC-A1-E04,Tự bổ sung,Phải có giới hạn tần suất theo IP,Tự bổ sung,93,FAIL,BUG-A1-09,có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn) | có cơ chế giới hạn tần suất (0/30 request bị chặn)
+API1,POST /api/login,A,FR-02,TC-A1-E05,Tự bổ sung,Không được dùng khóa tài khoản làm vũ khí DoS lên người khác,Tự bổ sung,12,FAIL,BUG-A1-10,nạn nhân vẫn đăng nhập được bằng mật khẩu ĐÚNG của mình | nạn nhân vẫn đăng nhập được bằng mật khẩu ĐÚNG của mình | nạn nhân vẫn đăng nhập được bằng mật khẩu ĐÚNG của mình | nạn nhân vẫn đăng nhập được bằng mật khẩu ĐÚNG của mình
+API1,POST /api/login,A,FR-02,TC-A1-E07,Tự bổ sung,SEC-01 ở tầng lưu trữ — CSDL không được lưu plaintext,Tự bổ sung,8,FAIL,BUG-A1-01,bản ghi trả về không được chứa đúng chuỗi mật khẩu vừa đăng ký | bản ghi trả về không được chứa đúng chuỗi mật khẩu vừa đăng ký
+API1,POST /api/login,A,FR-02,TC-A1-E01,Tự bổ sung,Hết hạn khóa phải reset bộ đếm — nếu không sẽ khóa vĩnh viễn,Tự bổ sung,24,FAIL,BUG-A1-11,bộ đếm không được vượt ngưỡng khóa — nếu vượt thì sau khi hết hạn chỉ cần 1 lần sai là khóa lại | bộ đếm không được vượt ngưỡng khóa — nếu vượt thì sau khi hết hạn chỉ cần 1 lần sai là khóa lại | bộ đếm không được vượt ngưỡng khóa — nếu vượt thì sau khi hết hạn chỉ cần 1 lần sai là khóa lại | bộ đếm không được vượt ngưỡng khóa — nếu vượt thì sau khi hết hạn chỉ cần 1 lần sai là khóa lại | bộ đếm không được vượt ngưỡng khóa — nếu vượt thì sau khi hết hạn chỉ cần 1 lần sai là khóa lại | bộ đếm không được vượt ngưỡng khóa — nếu vượt thì sau khi hết hạn chỉ cần 1 lần sai là khóa lại
+API2,POST /api/checkout,B,FR-08,SETUP-A2,Chuẩn bị,"Đăng nhập user thường, lưu token",Tự bổ sung,3,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-001,Phân vùng miền,total_amount khớp giỏ hàng,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-002,Phân vùng miền,total_amount thấp hơn giỏ rất nhiều → đơn vẫn phải ghi tổng giỏ,AI sinh,12,FAIL,BUG-A2-01,đơn ghi tổng giỏ chứ không phải số client gửi | đơn ghi tổng giỏ chứ không phải số client gửi | đơn ghi tổng giỏ chứ không phải số client gửi
+API2,POST /api/checkout,B,FR-08,TC-A2-003,Phân vùng miền,total_amount bằng 0 → đơn vẫn phải ghi tổng giỏ,AI sinh,12,FAIL,BUG-A2-01,đơn ghi tổng giỏ chứ không phải số client gửi | đơn ghi tổng giỏ chứ không phải số client gửi | đơn ghi tổng giỏ chứ không phải số client gửi
+API2,POST /api/checkout,B,FR-08,TC-A2-004,Phân vùng miền,total_amount số âm → đơn vẫn phải ghi tổng giỏ,AI sinh,12,FAIL,BUG-A2-01,đơn ghi tổng giỏ chứ không phải số client gửi | đơn ghi tổng giỏ chứ không phải số client gửi | đơn ghi tổng giỏ chứ không phải số client gửi
+API2,POST /api/checkout,B,FR-08,TC-A2-005,Phân vùng miền,total_amount cao hơn giỏ → đơn vẫn phải ghi tổng giỏ,AI sinh,12,FAIL,BUG-A2-01,đơn ghi tổng giỏ chứ không phải số client gửi | đơn ghi tổng giỏ chứ không phải số client gửi | đơn ghi tổng giỏ chứ không phải số client gửi
+API2,POST /api/checkout,B,FR-08,TC-A2-006,Phân vùng miền,"total_amount sai kiểu — chuỗi chữ ""abc""",AI sinh,12,FAIL,BUG-A2-04,giá trị sai kiểu không được lọt vào cột số tiền | giá trị sai kiểu không được lọt vào cột số tiền | giá trị sai kiểu không được lọt vào cột số tiền
+API2,POST /api/checkout,B,FR-08,TC-A2-007,Phân vùng miền,"total_amount sai kiểu — chuỗi số ""200000""",AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-008,Phân vùng miền,total_amount sai kiểu — boolean true,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-010,Phân vùng miền,total_amount sai kiểu — null,AI sinh,12,FAIL,BUG-A2-04,giá trị sai kiểu không được lọt vào cột số tiền | giá trị sai kiểu không được lọt vào cột số tiền | giá trị sai kiểu không được lọt vào cột số tiền
+API2,POST /api/checkout,B,FR-08,TC-A2-011,Phân vùng miền,total_amount sai kiểu — số thực 200000.55,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-012,Phân vùng miền,total_amount sai kiểu — ký hiệu khoa học 2e5,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-013,Phân vùng miền,total_amount sai kiểu — số tràn 1e308,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-009,Phân vùng miền,Thiếu hẳn total_amount — backend tự tính thì vẫn phải thành công,AI sinh,12,FAIL,BUG-A2-04,đơn ghi tổng giỏ dù client không gửi số nào | đơn ghi tổng giỏ dù client không gửi số nào | đơn ghi tổng giỏ dù client không gửi số nào
+API2,POST /api/checkout,B,FR-08,TC-A2-014,Phân vùng miền,Địa chỉ hợp lệ,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-015,Phân vùng miền,Địa chỉ rỗng — đặc tả im lặng nên chỉ khẳng định không sập,AI sinh,6,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-016,Phân vùng miền,Địa chỉ chỉ có khoảng trắng — đặc tả im lặng nên chỉ khẳng định không sập,AI sinh,6,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-021,Phân vùng miền,Địa chỉ sai kiểu — số — đặc tả im lặng nên chỉ khẳng định không sập,AI sinh,6,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-022,Phân vùng miền,Địa chỉ null — đặc tả im lặng nên chỉ khẳng định không sập,AI sinh,6,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-017,Phân vùng miền,Thiếu hẳn trường shipping_address,AI sinh,6,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-018,Giá trị biên,Địa chỉ 5 000 ký tự — phải lưu nguyên độ dài,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-019,Phân vùng miền,Địa chỉ có dấu tiếng Việt — không được vỡ mã hóa,AI sinh,9,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-020,Phân vùng miền,Địa chỉ có emoji — ký tự ngoài BMP,AI sinh,9,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-023,Phân vùng miền,Địa chỉ nhiều dòng — giữ nguyên ký tự xuống dòng,AI sinh,9,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-024,Giá trị biên,"Giỏ tối thiểu — 1 sản phẩm, số lượng 1",AI sinh,9,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-025,Giá trị biên,Số lượng 0 trong giỏ → tổng đơn phải là 0,AI sinh,9,FAIL,BUG-A2-01,"tổng tính từ giỏ, không lấy số client gửi | tổng tính từ giỏ, không lấy số client gửi | tổng tính từ giỏ, không lấy số client gửi"
+API2,POST /api/checkout,B,FR-08,TC-A2-026,Giá trị biên,Số lượng âm trong giỏ → tổng đơn không được âm,AI sinh,9,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-027,Giá trị biên,Số lượng rất lớn — kiểm tràn số,AI sinh,9,FAIL,BUG-A2-01,"tổng = 100 000 × 1 000 000, không tràn | tổng = 100 000 × 1 000 000, không tràn | tổng = 100 000 × 1 000 000, không tràn"
+API2,POST /api/checkout,B,FR-08,TC-A2-029,Giá trị biên,Giỏ nhiều dòng — tổng phải là tổng cả ba,AI sinh,15,FAIL,BUG-A2-01,tổng = 100k + 500k + 150k | tổng = 100k + 500k + 150k | tổng = 100k + 500k + 150k | tổng = 100k + 500k + 150k | tổng = 100k + 500k + 150k
+API2,POST /api/checkout,B,FR-08,TC-A2-030,Giá trị biên,Địa chỉ 1 ký tự,AI sinh,6,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-031,Chuyển trạng thái,Đơn mới phải ở trạng thái pending — điểm vào FR-10,AI sinh,9,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-032,Chuyển trạng thái,Giỏ hàng phải bị xóa sau khi thanh toán (D4),AI sinh,9,FAIL,BUG-A2-02,giỏ hàng rỗng sau khi thanh toán | giỏ hàng rỗng sau khi thanh toán | giỏ hàng rỗng sau khi thanh toán
+API2,POST /api/checkout,B,FR-08,TC-A2-033,Chuyển trạng thái,Giỏ RỖNG thì không được tạo đơn,AI sinh,9,FAIL,BUG-A2-03,phải từ chối vì không có gì để đặt | phải từ chối vì không có gì để đặt | phải từ chối vì không có gì để đặt
+API2,POST /api/checkout,B,FR-08,TC-A2-035,Chuyển trạng thái,Đơn phải nằm trong lịch sử của đúng người dùng,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-037,Chuyển trạng thái,Thêm cùng sản phẩm hai lần — tổng không được nhân đôi nhầm,AI sinh,12,FAIL,BUG-A2-01,tổng = 2 × 100 000 (FR-07 gộp dòng) | tổng = 2 × 100 000 (FR-07 gộp dòng) | tổng = 2 × 100 000 (FR-07 gộp dòng) | tổng = 2 × 100 000 (FR-07 gộp dòng)
+API2,POST /api/checkout,B,FR-08,TC-A2-039,Chuyển trạng thái,Đơn phải xuất hiện ở danh sách phía admin,AI sinh,9,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-040,Bảo mật,SEC-02 — không có header Authorization,AI sinh,4,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-041,Bảo mật,SEC-02 — token sai định dạng,AI sinh,4,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-042,Bảo mật,SEC-02 — token đúng cấu trúc nhưng sai chữ ký,AI sinh,4,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-043,Bảo mật,SEC-02 — header Authorization rỗng,AI sinh,4,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-044,Bảo mật,SEC-02 — thiếu tiền tố Bearer,AI sinh,4,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-045,Bảo mật,Mass assignment — client tự đặt user_id của người khác,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-046,Bảo mật,Mass assignment — client tự đặt status delivered,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-047,Bảo mật,Mass assignment — client tự đặt id đơn hàng tự chọn,AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-048,Bảo mật,SQL injection trong shipping_address,AI sinh,20,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-049,Bảo mật,"SEC-04 — payload XSS lưu nguyên văn, response là JSON",AI sinh,12,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-050,Bảo mật,IDOR — đọc đơn hàng mà không cần token,AI sinh,9,FAIL,BUG-A2-05,đọc đơn mà không có token phải bị chặn | đọc đơn mà không có token phải bị chặn | đọc đơn mà không có token phải bị chặn
+API2,POST /api/checkout,B,FR-08,TC-A2-052,Schema & HTTP,Response 200 khớp schema,AI sinh,6,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-053,Schema & HTTP,Đơn hàng khớp schema — total_amount là số ≥ 0,AI sinh,9,FAIL,BUG-A2-04,đơn hàng khớp schema | đơn hàng khớp schema | đơn hàng khớp schema
+API2,POST /api/checkout,B,FR-08,TC-A2-056,Schema & HTTP,Sai method GET /api/checkout,AI sinh,3,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-057,Schema & HTTP,Sai method PUT /api/checkout,AI sinh,3,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-058,Schema & HTTP,Body JSON hỏng,AI sinh,3,PASS,,
+API2,POST /api/checkout,B,FR-08,TC-A2-E01,Tự bổ sung,Thanh toán 5 lần đồng thời chỉ được sinh 1 đơn,Tự bổ sung,27,FAIL,BUG-A2-06,cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: 5) | cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: 5) | cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: 5) | cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: 5) | cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: 5) | cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: 5) | cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: 5) | cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: 5) | cùng một giỏ hàng chỉ được sinh ra 1 đơn (thực tế: 5)
+API2,POST /api/checkout,B,FR-08,TC-A2-E02,Tự bổ sung,Không duyệt tuần tự được đơn hàng của người khác,Tự bổ sung,21,FAIL,BUG-A2-05,không đơn nào bị lộ khi duyệt tuần tự (lộ 5/5) | không đơn nào bị lộ khi duyệt tuần tự (lộ 5/5) | không đơn nào bị lộ khi duyệt tuần tự (lộ 5/5) | không đơn nào bị lộ khi duyệt tuần tự (lộ 5/5) | không đơn nào bị lộ khi duyệt tuần tự (lộ 5/5) | không đơn nào bị lộ khi duyệt tuần tự (lộ 5/5) | không đơn nào bị lộ khi duyệt tuần tự (lộ 5/5)
+API2,POST /api/checkout,B,FR-08,TC-A2-E03,Tự bổ sung,Token của tài khoản đã bị xóa không được đặt hàng,Tự bổ sung,12,FAIL,BUG-A2-07,token của tài khoản đã xóa phải bị từ chối | token của tài khoản đã xóa phải bị từ chối | token của tài khoản đã xóa phải bị từ chối | token của tài khoản đã xóa phải bị từ chối
+API2,POST /api/checkout,B,FR-08,TC-A2-E04,Tự bổ sung,Không được tồn tại đơn hàng mồ côi (khóa ngoại),Tự bổ sung,15,FAIL,BUG-A2-08,không có đơn nào trỏ tới người dùng không tồn tại (thấy 2) | không có đơn nào trỏ tới người dùng không tồn tại (thấy 2) | không có đơn nào trỏ tới người dùng không tồn tại (thấy 2) | không có đơn nào trỏ tới người dùng không tồn tại (thấy 2) | không có đơn nào trỏ tới người dùng không tồn tại (thấy 2)
+API2,POST /api/checkout,B,FR-08,TC-A2-E05,Tự bổ sung,Tài khoản đang bị khóa không được đặt hàng bằng token cũ,Tự bổ sung,18,FAIL,BUG-A2-09,tài khoản bị khóa thì token cũ cũng phải mất hiệu lực | tài khoản bị khóa thì token cũ cũng phải mất hiệu lực | tài khoản bị khóa thì token cũ cũng phải mất hiệu lực | tài khoản bị khóa thì token cũ cũng phải mất hiệu lực | tài khoản bị khóa thì token cũ cũng phải mất hiệu lực | tài khoản bị khóa thì token cũ cũng phải mất hiệu lực

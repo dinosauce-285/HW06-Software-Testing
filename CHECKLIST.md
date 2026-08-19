@@ -5,7 +5,7 @@
 
 **Ký hiệu:** `[!]` thiếu là **0 điểm toàn bài** *(mục 17:185)* — `[~]` mất điểm ở mục tương ứng
 
-**Cập nhật:** 19/08/2026 — **API 1 xong trọn pipeline**, còn API 2, API 3, Agent Skill, CI/CD, tài liệu
+**Cập nhật:** 19/08/2026 — **API 1 + API 2 xong**, còn API 3, Agent Skill, CI/CD, tài liệu
 
 ```bash
 grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
@@ -43,11 +43,14 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 
 ## 2. API 2 — `POST /api/checkout` (Pool B, FR-08) — 30đ
 
-- [ ] Generate → `docs/api2/AI-Generated-Raw.md`
-- [ ] Audit → `docs/api2/Audit.md`
-- [ ] Extend → `docs/api2/Extended.md`
-- [ ] Execute
-- [ ] Bugs + Issue
+- [x] **Generate**: 7 lượt prompt, **60 case**, đủ 4 trục → `docs/api2/AI-Generated-Raw.md`
+      → AI tự phát hiện đặc tả **tự mâu thuẫn** (§4.3 vs FR-08) và nêu rõ lựa chọn của nó
+- [x] **Audit**: **47 VALID / 7 INVALID / 6 INCOMPLETE** → `docs/api2/Audit.md`
+      → tỉ lệ VALID tăng từ 45 % (API 1) lên **78 %** nhờ sửa prompt, cùng model
+- [x] **Extend**: **5 case** tự bổ sung + 4 nguyên nhân AI sót → `docs/api2/Extended.md`
+- [x] **Execute**: gộp chung collection — 123 request, **452 khẳng định / 40 fail**
+      → bộ hồi quy CI: **326 khẳng định, 0 fail**
+- [ ] **Bugs**: **9 lỗi** đã ghi `docs/Bug-Report.md`; còn mở GitHub Issue kèm ảnh
 
 ## 3. API 3 — `PUT /api/admin/orders/:id/status` (Pool C, FR-18) — 30đ
 
