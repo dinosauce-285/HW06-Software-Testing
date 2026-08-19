@@ -5,7 +5,7 @@
 
 **Ký hiệu:** `[!]` thiếu là **0 điểm toàn bài** *(mục 17:185)* — `[~]` mất điểm ở mục tương ứng
 
-**Cập nhật:** 18/08/2026 — mới dựng khung, chưa làm test case nào
+**Cập nhật:** 19/08/2026 — **API 1 xong trọn pipeline**, còn API 2, API 3, Agent Skill, CI/CD, tài liệu
 
 ```bash
 grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
@@ -38,7 +38,8 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 - [x] **Execute**: 66 request, **254 khẳng định / 20 fail**, mọi fail truy được về một bug *(mục 6:85)*
       → `results/html/conformance.html` + `results/raw/conformance.json`
       → bộ hồi quy cho CI: **195 khẳng định, 0 fail**
-- [ ] **Bugs**: **11 lỗi** đã ghi `docs/Bug-Report.md`; còn mở GitHub Issue kèm ảnh *(mục 6:86)*
+- [x] **Bugs**: **11 lỗi** (5 Nghiêm trọng, 4/5 do tự tìm) *(mục 6:86)*
+      → `docs/Bug-Report.md` + **11 GitHub Issue** #1–#11, mỗi issue kèm ảnh transcript chạy thật
 
 ## 2. API 2 — `POST /api/checkout` (Pool B, FR-08) — 30đ
 

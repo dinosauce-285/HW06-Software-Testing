@@ -14,7 +14,7 @@
  * Chạy thật: node scripts/create-issues.js
  */
 
-const { execSync } = require("child_process");
+const { execSync, execFileSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -121,9 +121,14 @@ ${coAnh ? `## Bằng chứng\n\n![${b.id}](${RAW}/${b.id}.png)\n` : ""}
   const f = path.join(tmp, `issue-${b.id}.md`);
   fs.writeFileSync(f, body);
   try {
-    const url = execSync(
-      `gh issue create --repo ${REPO} --title ${JSON.stringify(title)} --body-file ${JSON.stringify(f)} ` +
-        labels.map((l) => `--label ${JSON.stringify(l)}`).join(" "),
+    // execFileSync chứ KHÔNG execSync: tiêu đề lỗi có chứa dấu backtick
+    // (ví dụ "`Content-Type: text/plain` làm server trả 500"). Ghép vào chuỗi
+    // shell thì backtick bị hiểu là lệnh và nuốt mất một đoạn tiêu đề.
+    // Truyền tham số dạng mảng thì không qua shell, không còn chuyện đó.
+    const url = execFileSync(
+      "gh",
+      ["issue", "create", "--repo", REPO, "--title", title, "--body-file", f,
+       ...labels.flatMap((l) => ["--label", l])],
       { encoding: "utf8" },
     ).trim();
     console.log(`✓ ${b.id}  ${url}`);
