@@ -75,7 +75,8 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 ## 5. Ràng buộc kỹ thuật xuyên suốt
 
 - [x] Pre-request script cấp collection gắn `X-Student-Id: 23127262` cho **mọi** request *(mục 6:85)*
-- [ ] **Ảnh chụp Postman Console** chứng minh header đó `[!]` *(mục 11:131)* → `evidence/postman/`
+- [x] Bằng chứng header từ Newman + **soát 624 request, 0 chỗ thiếu** → `evidence/postman/`
+- [ ] **Ảnh chụp Postman Console** từ giao diện `[!]` *(mục 11:131)* — Postman **đã cài sẵn**, xem `docs/Postman-Console-HOWTO.md`
 - [x] Dùng nhiều tính năng Postman — **27 tính năng**, liệt kê ở `docs/Postman-Features.md` *(mục 6:90)*
 - [x] **Data-driven run** bằng `data/api3-transitions.csv` — 1 request × 25 dòng
 - [x] Mock server + Monitor + Visualizer: **cân nhắc và quyết định không dùng**, có ghi lý do kỹ thuật trong `docs/Postman-Features.md`
