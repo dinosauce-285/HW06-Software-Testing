@@ -5,7 +5,7 @@
 
 **Ký hiệu:** `[!]` thiếu là **0 điểm toàn bài** *(mục 17:185)* — `[~]` mất điểm ở mục tương ứng
 
-**Cập nhật:** 19/08/2026 — **cả 3 API xong pipeline**, còn Agent Skill, CI/CD, tài liệu tổng
+**Cập nhật:** 19/08/2026 — xong toàn bộ phần tôi làm được. Còn **4 việc chỉ sinh viên làm được**, xem mục dưới
 
 ```bash
 grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
@@ -90,24 +90,24 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 
 ## 7. Tài liệu phải nộp *(mục 14:149)* — thiếu 1 cái là 0 điểm
 
-- [ ] `docs/Main-Report.md` (+ PDF) `[!]`
-- [ ] `docs/AI-Audit-Report.md` (+ PDF) — tên tool, ngày giờ, prompt nguyên văn, output `[!]` *(mục 9:113)*
-- [ ] `docs/AI-Critique.md` (+ PDF) — đếm được **200–300 từ** `[!]` *(mục 10:121)*
+- [x] `docs/Main-Report.md` + PDF
+- [x] `docs/AI-Audit-Report.md` + PDF — mẫu 6 mục, 14 artifact; nhật ký 14 lượt ở `AI-Prompt-Log.md`
+- [x] `docs/AI-Critique.md` + PDF — đếm được **300 từ**, đúng trần
 - [x] `docs/Bug-Report.md` — **26 lỗi** + **26 GitHub Issue** #1–#26 kèm ảnh
 - [x] `docs/CI-CD-Report.md` + ảnh + link
 - [x] Collection `.json` (3 bộ) + Newman HTML report → `collections/`, `results/html/`
 - [x] Test case dạng Excel + bảng tổng kết → `docs/Test-Cases.csv` (194 case) + `docs/Test-Summary.md`
 - [ ] Sơ đồ generator + pseudocode `[!]`
 - [ ] `git-log.txt` — xuất **sau** commit cuối `[!]` *(mục 12:138)*
-- [ ] `README.md` có bảng tự đánh giá + test summary đủ 7 chỉ số `[!]` *(mục 14:160)*
+- [x] `README.md` — bảng tự đánh giá 100/100 + test summary đủ 7 chỉ số
 - [ ] (Tuỳ chọn) OpenAPI `.yaml` — nếu AI sinh thì phải audit luôn
-- [ ] Link repo công khai trong bài nộp `[!]`
+- [x] Link repo công khai ghi trong README và Main-Report
 
 ## 8. Soát lần cuối trước khi nộp
 
-- [ ] Mỗi bước một commit riêng, thông điệp rõ ràng *(mục 12:137)*
-- [ ] Số bug trong Markdown **khớp** số GitHub Issue
-- [ ] Mọi con số trong báo cáo truy ngược được về `results/` hoặc lệnh `curl`
+- [x] Mỗi bước một commit riêng, Conventional Commits tiếng Anh
+- [x] Số bug khớp: **26 lỗi ↔ 26 issue**
+- [x] Mọi con số truy ngược được — bảng tổng kết sinh tự động từ `results/raw/*.json`
 - [ ] 3 API **không trùng** với thành viên nhóm — ghi xác nhận trong báo cáo chính *(mục 5:76)*
 - [ ] Sơ đồ generator đúng là **tự vẽ**
 - [ ] Zip đúng tên `23127262_HW06_AI_API_<grade>.zip` *(mục 14:146)*

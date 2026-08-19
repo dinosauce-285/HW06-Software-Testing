@@ -110,20 +110,19 @@ tốt hơn giúp AI **viết test case đúng hơn**, nhưng không giúp nó **
 
 ## 5. Kết luận — Khi nào nên / không nên dùng AI?
 
-AI mạnh ở **độ phủ cơ học**: phân vùng tương đương, giá trị biên, biến thể enum, JSON Schema — phần
-tốn nhiều thời gian nhất mà giá trị phán đoán thấp nhất. Nó cũng tốt bất ngờ ở **rà soát tĩnh đặc
-tả**: tự phát hiện hai chỗ đặc tả tự mâu thuẫn mà tôi đọc bằng mắt đã bỏ qua.
+AI mạnh ở **độ phủ cơ học**: phân vùng tương đương, giá trị biên, enum, JSON Schema — phần tốn
+nhiều công mà giá trị phán đoán thấp. Nó cũng tốt ở **rà soát tĩnh đặc tả**: tự phát hiện hai chỗ
+đặc tả tự mâu thuẫn mà tôi đọc đã bỏ qua.
 
-AI sai theo hai kiểu. Kiểu **chữa được bằng prompt**: khẳng định ràng buộc không tồn tại, neo vào
-danh sách cho sẵn, quên tiền đề trạng thái — sửa prompt thì VALID đi từ 45 % lên 90 %. Kiểu **không
-chữa được**: AI chỉ thấy endpoint được đưa cho nó, nên lỗi nằm *giữa* các endpoint đều vô hình — mà
-đó lại là những lỗi nghiêm trọng nhất.
+AI sai hai kiểu. Kiểu **chữa được bằng prompt**: khẳng định ràng buộc không tồn tại, neo vào danh
+sách cho sẵn, quên tiền đề trạng thái — sửa prompt thì VALID đi từ 45 % lên 90 %. Kiểu **không chữa
+được**: AI chỉ thấy endpoint được đưa cho nó, nên lỗi nằm *giữa* các endpoint đều vô hình — mà đó
+lại là những lỗi nghiêm trọng nhất.
 
-**Khuyến nghị:** dùng AI để phủ rộng, **không** cho nó đọc mã nguồn khi sinh test (nó sẽ chép hành
-vi sai thành kỳ vọng), và luôn giữ cổng thẩm định của người có **đo hành vi thật bằng `curl`**
-trước khi gán nhãn.
+**Khuyến nghị:** dùng AI để phủ rộng, **không** cho đọc mã nguồn khi sinh test, và luôn giữ cổng
+thẩm định của người, có **đo hành vi thật bằng `curl`**.
 
-*(145 chữ)*
+*(150 chữ)*
 
 ---
 
