@@ -90,9 +90,9 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 
 ## 7. Tài liệu phải nộp *(mục 14:149)* — thiếu 1 cái là 0 điểm
 
-- [x] `docs/Main-Report.md` + PDF
-- [x] `docs/AI-Audit-Report.md` + PDF — mẫu 6 mục, 14 artifact; nhật ký 14 lượt ở `AI-Prompt-Log.md`
-- [x] `docs/AI-Critique.md` + PDF — đếm được **300 từ**, đúng trần
+- [x] `docs/Main-Report.md`  ·  *(PDF: sinh viên tự Save-As)*
+- [x] `docs/AI-Audit-Report.md` — mẫu 6 mục, 14 artifact; nhật ký 14 lượt ở `AI-Prompt-Log.md`  ·  *(PDF: sinh viên tự Save-As)*
+- [x] `docs/AI-Critique.md` — đếm được **300 từ**, đúng trần  ·  *(PDF: sinh viên tự Save-As)*
 - [x] `docs/Bug-Report.md` — **26 lỗi** + **26 GitHub Issue** #1–#26 kèm ảnh
 - [x] `docs/CI-CD-Report.md` + ảnh + link
 - [x] Collection `.json` (3 bộ) + Newman HTML report → `collections/`, `results/html/`
