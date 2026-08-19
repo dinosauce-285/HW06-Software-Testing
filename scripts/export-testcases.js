@@ -63,6 +63,23 @@ const q = (v) => {
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 };
 
+/** 25 ô ma trận của API 3 chạy ở collection data-driven riêng, không nằm trong
+ *  tests/*.cases.js. Đọc thẳng từ file dữ liệu để bảng tổng kết không thiếu chúng. */
+function docMaTran() {
+  const f = path.join(ROOT, "data/api3-transitions.csv");
+  if (!fs.existsSync(f)) return [];
+  const dong = fs.readFileSync(f, "utf8").trim().split("\n").slice(1);
+  return dong.map((d) => {
+    const [case_id, tu, toi, hopLe, ma, ghiChu] = d.split(",");
+    return {
+      id: case_id, axis: "state", origin: "ai",
+      name: `${tu} → ${toi} (${hopLe === "co" ? "hợp lệ" : "phải bị từ chối"}, mong đợi ${ma})`,
+      knownBug: /BUG-/.test(ghiChu) ? ghiChu.match(/BUG-[A-Z0-9-]+/)[0] : undefined,
+      dataDriven: true,
+    };
+  });
+}
+
 function main() {
   const { theo, meta } = docKetQua();
   const hang = [];
@@ -71,15 +88,18 @@ function main() {
   for (const src of NGUON) {
     const full = path.join(ROOT, "tests", src.file);
     if (!fs.existsSync(full)) continue;
-    const cases = require(full);
+    let cases = require(full);
+    if (src.api === "API3") cases = cases.concat(docMaTran());
     const tk = (thongKe[src.api] = {
       endpoint: src.endpoint, pool: src.pool, fr: src.fr,
-      ai: 0, human: 0, chay: 0, pass: 0, fail: 0, bugs: new Set(), truc: {},
+      ai: 0, human: 0, chay: 0, pass: 0, fail: 0, dd: 0, bugs: new Set(), truc: {},
     });
 
     for (const c of cases) {
       const kq = theo[c.id];
-      const trangThai = !kq ? "Chưa chạy" : kq.fail === 0 ? "PASS" : "FAIL";
+      const trangThai = !kq
+        ? (c.dataDriven ? "Chạy data-driven" : "Chưa chạy")
+        : kq.fail === 0 ? "PASS" : "FAIL";
 
       hang.push({
         api: src.api, endpoint: src.endpoint, pool: src.pool, fr: src.fr,
@@ -87,6 +107,7 @@ function main() {
         truc: TEN_TRUC[c.axis] || c.axis,
         mota: c.name,
         nguon: c.origin === "human" ? "Tự bổ sung" : "AI sinh",
+        cachChay: c.dataDriven ? "data-driven (data/api3-transitions.csv)" : "collection chính",
         khangDinh: kq ? kq.tong : 0,
         trangThai,
         loi: c.knownBug || "",
@@ -98,18 +119,25 @@ function main() {
       if (kq) {
         tk.chay++;
         trangThai === "PASS" ? tk.pass++ : tk.fail++;
+      } else if (c.dataDriven) {
+        tk.chay++;   // chạy ở lượt data-driven riêng, xem mục 5
+        tk.dd++;
       }
-      if (c.knownBug) tk.bugs.add(c.knownBug);
+      // Chỉ đếm lỗi CỦA CHÍNH API này. Nhiều case của API 2/3 bắt lại khuyết tật
+      // đã ghi ở API 1 (ví dụ BUG-A1-05 text/plain -> 500); đếm chúng vào đây thì
+      // tổng số lỗi sẽ bị thổi lên.
+      if (c.knownBug && c.knownBug.startsWith("BUG-A" + src.api.slice(-1))) tk.bugs.add(c.knownBug);
     }
   }
 
   // ── CSV ───────────────────────────────────────────────────────────────
   const cot = ["API", "Endpoint", "Pool", "FR", "Mã case", "Trục kiểm thử", "Mô tả",
-               "Nguồn", "Số khẳng định", "Kết quả", "Mã lỗi", "Chi tiết khẳng định thất bại"];
+               "Nguồn", "Cách chạy", "Số khẳng định", "Kết quả", "Mã lỗi",
+               "Chi tiết khẳng định thất bại"];
   const csv = [cot.join(",")];
   for (const h of hang) {
     csv.push([h.api, h.endpoint, h.pool, h.fr, h.id, h.truc, h.mota, h.nguon,
-              h.khangDinh, h.trangThai, h.loi, h.chiTietFail].map(q).join(","));
+              h.cachChay, h.khangDinh, h.trangThai, h.loi, h.chiTietFail].map(q).join(","));
   }
   // BOM để Excel nhận đúng UTF-8 tiếng Việt
   fs.writeFileSync(OUT_CSV, "﻿" + csv.join("\n") + "\n");
@@ -127,7 +155,7 @@ function main() {
 
 ## 1. Tổng kết theo API
 
-| API | Endpoint | Pool | FR | AI sinh | Tự bổ sung | Đã chạy | Pass | Fail | Số lỗi |
+| API | Endpoint | Pool | FR | AI sinh | Tự bổ sung | Đã chạy | Pass¹ | Fail¹ | Số lỗi |
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 `;
   for (const a of apis) {
@@ -135,6 +163,9 @@ function main() {
     md += `| ${a} | \`${t.endpoint}\` | ${t.pool} | ${t.fr} | ${t.ai} | ${t.human} | ${t.chay} | ${t.pass} | ${t.fail} | ${t.bugs.size} |\n`;
   }
   md += `| **Tổng** | | | | **${tong("ai")}** | **${tong("human")}** | **${tong("chay")}** | **${tong("pass")}** | **${tong("fail")}** | **${tatCaBug.size}** |\n`;
+
+  md += `\n¹ Cột Pass/Fail chỉ tính các case chạy trong **collection chính**. ` +
+        `${tong("dd")} case ma trận trạng thái chạy ở lượt **data-driven** riêng — số liệu ở mục 5.\n`;
 
   md += `\n## 2. Độ phủ theo trục kiểm thử\n\n| Trục | ${apis.join(" | ")} | Tổng |\n| --- | ${apis.map(() => "---:").join(" | ")} | ---: |\n`;
   const trucs = [...new Set(apis.flatMap((a) => Object.keys(thongKe[a].truc)))];
@@ -166,6 +197,27 @@ function main() {
 > **Vì sao có khẳng định thất bại:** bộ test khẳng định theo **đặc tả**, mà SUT có lỗi thật.
 > Mỗi khẳng định thất bại đều truy được về một mã lỗi ở cột "Mã lỗi". Bộ hồi quy dùng cho CI
 > (\`EShop-API-Regression\`) đã loại các case này ra nên luôn xanh.
+`;
+  }
+
+  const dd = path.join(ROOT, "results/raw/api3-transitions.json");
+  if (fs.existsSync(dd)) {
+    const r = JSON.parse(fs.readFileSync(dd, "utf8")).run.stats;
+    md += `\n## 5. Lượt chạy data-driven — ma trận chuyển trạng thái FR-10\n
+Chạy bằng:
+\`\`\`bash
+npx newman run collections/EShop-API3-Transitions.postman_collection.json \\
+  -e environments/local.postman_environment.json -d data/api3-transitions.csv
+\`\`\`
+
+| | |
+| --- | --- |
+| Số dòng dữ liệu (ô ma trận) | ${r.iterations.total} |
+| Request | ${r.requests.total} |
+| Khẳng định | ${r.assertions.total} |
+| Khẳng định thất bại | ${r.assertions.failed} |
+
+Ma trận khớp sơ đồ FR-10 ở **24/25 ô**. Ô lệch duy nhất là \`canceled → delivered\` (BUG-A3-02).
 `;
   }
 

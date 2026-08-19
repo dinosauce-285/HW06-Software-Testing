@@ -62,12 +62,13 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 - [x] **Extend**: **5 case** tự bổ sung → `docs/api3/Extended.md`
 - [x] **Execute**: bộ chính **619 khẳng định / 59 fail**; ma trận data-driven **150 / 2**
       → bộ hồi quy CI: **448 khẳng định, 0 fail**
-- [ ] **Bugs**: **6 lỗi** đã ghi `docs/Bug-Report.md`; còn mở GitHub Issue kèm ảnh
+- [x] **Bugs**: **6 lỗi** (4 Nghiêm trọng, cả 3 lỗi tự tìm đều Nghiêm trọng)
+      → `docs/Bug-Report.md` + **GitHub Issue #21–#26** kèm ảnh
 
 ## 4. Agent Skill — AI test generator — 10đ *(mục 7:95)*
 
 - [ ] **Sơ đồ TỰ VẼ** (không để AI sinh) `[!]` *(mục 11:133)* → `generator/`
-- [ ] Pseudocode → `generator/pseudocode.md` hoặc `.py`
+- [x] Pseudocode → `generator/pseudocode.md` — 6 giai đoạn, mỗi khối truy được về một lỗi thật của AI
 - [ ] Cài thành Agent Skill trong `.claude/skills/`
 - [ ] Video YouTube demo skill sinh test cho 1 API `[~]` *(mục 7:96)*
 
@@ -78,7 +79,7 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 - [x] Dùng nhiều tính năng Postman — **27 tính năng**, liệt kê ở `docs/Postman-Features.md` *(mục 6:90)*
 - [x] **Data-driven run** bằng `data/api3-transitions.csv` — 1 request × 25 dòng
 - [x] Mock server + Monitor + Visualizer: **cân nhắc và quyết định không dùng**, có ghi lý do kỹ thuật trong `docs/Postman-Features.md`
-- [ ] Newman HTML report, hostname khớp deployment `[!]` *(mục 11:132)*
+- [x] Newman HTML report, hostname `qt-ThinkBook-14-G5-IRH` in trên mọi ảnh bằng chứng *(mục 11:132)*
 
 ## 6. CI/CD *(mục 6:91)*
 
@@ -92,10 +93,10 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 - [ ] `docs/Main-Report.md` (+ PDF) `[!]`
 - [ ] `docs/AI-Audit-Report.md` (+ PDF) — tên tool, ngày giờ, prompt nguyên văn, output `[!]` *(mục 9:113)*
 - [ ] `docs/AI-Critique.md` (+ PDF) — đếm được **200–300 từ** `[!]` *(mục 10:121)*
-- [ ] `docs/Bug-Report.md` + ảnh Issue trên GitHub `[!]`
+- [x] `docs/Bug-Report.md` — **26 lỗi** + **26 GitHub Issue** #1–#26 kèm ảnh
 - [ ] `docs/CI-CD-Report.md` + ảnh + link `[!]`
-- [ ] Collection `.json` + Newman HTML report `[!]`
-- [ ] Test case dạng Excel + bảng tổng kết `[!]`
+- [x] Collection `.json` (3 bộ) + Newman HTML report → `collections/`, `results/html/`
+- [x] Test case dạng Excel + bảng tổng kết → `docs/Test-Cases.csv` (194 case) + `docs/Test-Summary.md`
 - [ ] Sơ đồ generator + pseudocode `[!]`
 - [ ] `git-log.txt` — xuất **sau** commit cuối `[!]` *(mục 12:138)*
 - [ ] `README.md` có bảng tự đánh giá + test summary đủ 7 chỉ số `[!]` *(mục 14:160)*
