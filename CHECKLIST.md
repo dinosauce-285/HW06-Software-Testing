@@ -50,7 +50,8 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 - [x] **Extend**: **5 case** tự bổ sung + 4 nguyên nhân AI sót → `docs/api2/Extended.md`
 - [x] **Execute**: gộp chung collection — 123 request, **452 khẳng định / 40 fail**
       → bộ hồi quy CI: **326 khẳng định, 0 fail**
-- [ ] **Bugs**: **9 lỗi** đã ghi `docs/Bug-Report.md`; còn mở GitHub Issue kèm ảnh
+- [x] **Bugs**: **9 lỗi** (4 Nghiêm trọng, 2/4 do tự tìm)
+      → `docs/Bug-Report.md` + **GitHub Issue #12–#20** kèm ảnh transcript chạy thật
 
 ## 3. API 3 — `PUT /api/admin/orders/:id/status` (Pool C, FR-18) — 30đ
 
