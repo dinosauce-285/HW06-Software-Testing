@@ -29,11 +29,16 @@ grep -c '^- \[x\]' CHECKLIST.md && grep -c '^- \[ \]' CHECKLIST.md
 
 ## 1. API 1 — `POST /api/login` (Pool A, FR-02) — 30đ
 
-- [ ] **Generate**: dẫn AI từng bước, ≥ 35 case, đủ 4 trục *(mục 6:82)* → `docs/api1/AI-Generated-Raw.md`
-- [ ] **Audit**: gán nhãn VALID/INVALID/INCOMPLETE kèm lý do *(mục 6:83)* → `docs/api1/Audit.md`
-- [ ] **Extend**: ≥ 5 case tự nghĩ + giải thích vì sao AI sót *(mục 6:84)* → `docs/api1/Extended.md`
-- [ ] **Execute**: dựng folder trong collection, chạy Newman, xuất HTML *(mục 6:85)*
-- [ ] **Bugs**: ghi vào `docs/Bug-Report.md` + mở GitHub Issue kèm ảnh *(mục 6:86)*
+- [x] **Generate**: 7 lượt prompt theo từng kỹ thuật, **60 case** (yêu cầu ≥ 35), đủ 4 trục *(mục 6:82)*
+      → `docs/api1/AI-Generated-Raw.md` — AI bị cách ly khỏi `server.js`, chỉ đọc đặc tả
+- [x] **Audit**: gán nhãn cả 60 — **27 VALID / 18 INVALID / 15 INCOMPLETE** *(mục 6:83)*
+      → `docs/api1/Audit.md` — kèm 3 khuôn lỗi hệ thống của AI và bảng đo hành vi thật bằng `curl`
+- [x] **Extend**: **7 case** tự bổ sung + phân tích 5 nguyên nhân AI sót *(mục 6:84)*
+      → `docs/api1/Extended.md`
+- [x] **Execute**: 66 request, **254 khẳng định / 20 fail**, mọi fail truy được về một bug *(mục 6:85)*
+      → `results/html/conformance.html` + `results/raw/conformance.json`
+      → bộ hồi quy cho CI: **195 khẳng định, 0 fail**
+- [ ] **Bugs**: **11 lỗi** đã ghi `docs/Bug-Report.md`; còn mở GitHub Issue kèm ảnh *(mục 6:86)*
 
 ## 2. API 2 — `POST /api/checkout` (Pool B, FR-08) — 30đ
 

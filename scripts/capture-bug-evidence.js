@@ -188,17 +188,36 @@ function page(bug, meta) {
 }
 
 (async () => {
-  const results = [];
-  for (const c of CASES) {
-    const parts = c.cmds.map((cmd) => ({ cmd: cmd.replace(/\s*\\\n\s*/g, " ").trim(), out: sh(cmd) }));
-    results.push({ ...c, parts });
-    console.log(`✓ chạy xong ${c.id}`);
+  const TRANSCRIPT = path.join(OUT, "transcripts.json");
+  // --render-only: vẽ lại ảnh từ transcript đã lưu, khỏi chạy lại (lượt chạy mất ~4 phút
+  // vì BUG-A1-11 phải chờ hết hạn khoá 180 giây).
+  const renderOnly = process.argv.includes("--render-only");
+
+  let results, meta;
+  if (renderOnly) {
+    const luu = JSON.parse(fs.readFileSync(TRANSCRIPT, "utf8"));
+    ({ results } = luu);
+    meta = { host: luu.host, user: luu.user, at: luu.at };
+    console.log(`Vẽ lại từ transcript đã lưu (${meta.at})`);
+  } else {
+    results = [];
+    for (const c of CASES) {
+      const parts = c.cmds.map((cmd) => ({ cmd: cmd.replace(/\s*\\\n\s*/g, " ").trim(), out: sh(cmd) }));
+      results.push({ ...c, parts });
+      console.log(`✓ chạy xong ${c.id}`);
+    }
+    meta = { host: os.hostname(), user: os.userInfo().username, at: new Date().toISOString() };
+    fs.writeFileSync(TRANSCRIPT, JSON.stringify({ ...meta, results }, null, 2));
   }
 
-  const meta = { host: os.hostname(), user: os.userInfo().username, at: new Date().toISOString() };
-  fs.writeFileSync(path.join(OUT, "transcripts.json"), JSON.stringify({ ...meta, results }, null, 2));
+  // Bản playwright sẵn có trên máy không khớp với binary trong ~/.cache/ms-playwright,
+  // nên trỏ thẳng vào binary đang có thay vì tải thêm một bản trình duyệt nữa.
+  const CHROME = [
+    path.join(os.homedir(), ".cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell"),
+    "/usr/bin/google-chrome",
+  ].find((p) => fs.existsSync(p));
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});
   const pg = await browser.newPage({ viewport: { width: 1180, height: 900 }, deviceScaleFactor: 2 });
   for (const bug of results) {
     await pg.setContent(page(bug, meta));

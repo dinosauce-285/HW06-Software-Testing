@@ -1,0 +1,160 @@
+{
+  "host": "qt-ThinkBook-14-G5-IRH",
+  "user": "qt",
+  "at": "2026-08-19T04:21:55.827Z",
+  "results": [
+    {
+      "id": "BUG-A1-01",
+      "title": "Mật khẩu được lưu và trả về dạng plaintext (SEC-01)",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq '.user'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq '.user'",
+          "out": "{\n  \"id\": 2,\n  \"name\": \"Test User\",\n  \"email\": \"test@eshop.com\",\n  \"password\": \"Test1234!\",\n  \"role\": \"user\",\n  \"login_attempts\": 0,\n  \"locked_until\": null,\n  \"reset_token\": null,\n  \"shipping_address\": null,\n  \"phone\": null\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-02",
+      "title": "Bộ đếm tăng 2 mỗi lần sai, khoá ngay từ lần thứ 2 (FR-02)",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token)\nfor i in 1 2 3; do\n  printf 'lan %s -> HTTP ' \"$i\"\n  curl -s -o /dev/null -w '%{http_code}   ' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'\n  curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq -c '.[] | select(.email==\"test@eshop.com\") | {login_attempts, locked_until}'\ndone"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token)\nfor i in 1 2 3; do\n  printf 'lan %s -> HTTP ' \"$i\"\n  curl -s -o /dev/null -w '%{http_code}   ' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'\n  curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq -c '.[] | select(.email==\"test@eshop.com\") | {login_attempts, locked_until}'\ndone",
+          "out": "lan 1 -> HTTP 401   {\"login_attempts\":2,\"locked_until\":null}\nlan 2 -> HTTP 401   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T04:21:42.121Z\"}\nlan 3 -> HTTP 403   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T04:21:42.121Z\"}\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-03",
+      "title": "Thời lượng khoá 180 giây thay vì 30 giây theo đặc tả (FR-02)",
+      "cmds": [
+        "AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token); curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq -r '.[] | select(.email==\"test@eshop.com\") | .locked_until' | xargs -I{} node -e \"console.log('locked_until =', '{}'); console.log('con lai   =', Math.round((new Date('{}')-Date.now())/1000), 'giay  (dac ta doi TONG 30 giay)')\""
+      ],
+      "parts": [
+        {
+          "cmd": "AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token); curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq -r '.[] | select(.email==\"test@eshop.com\") | .locked_until' | xargs -I{} node -e \"console.log('locked_until =', '{}'); console.log('con lai   =', Math.round((new Date('{}')-Date.now())/1000), 'giay  (dac ta doi TONG 30 giay)')\"",
+          "out": "locked_until = 2026-08-19T04:21:42.121Z\ncon lai   = 180 giay  (dac ta doi TONG 30 giay)\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-04",
+      "title": "JWT không có hạn dùng — token sống vĩnh viễn (SEC-02)",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token | cut -d. -f2 | base64 -d 2>/dev/null; echo; echo '^ khong co claim exp'",
+        "echo 'SECRET_KEY hardcode ngay trong ma nguon:'; sed -n '9p' sut/backend/server.js"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}' | jq -r .token | cut -d. -f2 | base64 -d 2>/dev/null; echo; echo '^ khong co claim exp'",
+          "out": "{\"id\":2,\"role\":\"user\",\"iat\":1787113123}\n^ khong co claim exp\n"
+        },
+        {
+          "cmd": "echo 'SECRET_KEY hardcode ngay trong ma nguon:'; sed -n '9p' sut/backend/server.js",
+          "out": "SECRET_KEY hardcode ngay trong ma nguon:\nconst SECRET_KEY = \"super_secret_key_that_should_not_be_here\";\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-05",
+      "title": "Content-Type: text/plain làm server trả HTTP 500",
+      "cmds": [
+        "curl -s -o /dev/null -w 'HTTP %{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: text/plain' --data-raw '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}'"
+      ],
+      "parts": [
+        {
+          "cmd": "curl -s -o /dev/null -w 'HTTP %{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: text/plain' --data-raw '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}'",
+          "out": "HTTP 500\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-06",
+      "title": "Response lỗi trả HTML trên một API JSON",
+      "cmds": [
+        "curl -s -w '\\n<- HTTP %{http_code}  %{content_type}\\n' localhost:3000/api/login | head -6",
+        "curl -s -w '\\n<- HTTP %{http_code}  %{content_type}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' --data-raw '{\"email\":' | head -6"
+      ],
+      "parts": [
+        {
+          "cmd": "curl -s -w '\\n<- HTTP %{http_code}  %{content_type}\\n' localhost:3000/api/login | head -6",
+          "out": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n"
+        },
+        {
+          "cmd": "curl -s -w '\\n<- HTTP %{http_code}  %{content_type}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' --data-raw '{\"email\":' | head -6",
+          "out": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-07",
+      "title": "Liệt kê tài khoản qua kênh phản hồi 403 (FR-02 C5)",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1\necho '--- email GIA (khong ton tai) ---'\nfor i in 1 2 3 4; do printf '  lan %s -> ' \"$i\"; curl -s -o /dev/null -w '%{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"ma-khong-ton-tai@hw06.local\",\"password\":\"SAI\"}'; done\necho '--- email THAT ---'\nfor i in 1 2 3 4; do printf '  lan %s -> ' \"$i\"; curl -s -o /dev/null -w '%{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'; done\necho '--- than response cua nhanh 403 ---'\ncurl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1\necho '--- email GIA (khong ton tai) ---'\nfor i in 1 2 3 4; do printf '  lan %s -> ' \"$i\"; curl -s -o /dev/null -w '%{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"ma-khong-ton-tai@hw06.local\",\"password\":\"SAI\"}'; done\necho '--- email THAT ---'\nfor i in 1 2 3 4; do printf '  lan %s -> ' \"$i\"; curl -s -o /dev/null -w '%{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'; done\necho '--- than response cua nhanh 403 ---'\ncurl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'",
+          "out": "--- email GIA (khong ton tai) ---\n  lan 1 -> 401\n  lan 2 -> 401\n  lan 3 -> 401\n  lan 4 -> 401\n--- email THAT ---\n  lan 1 -> 401\n  lan 2 -> 401\n  lan 3 -> 403\n  lan 4 -> 403\n--- than response cua nhanh 403 ---\n{\"error\":\"Tài khoản đã bị khóa. Vui lòng thử lại sau.\"}"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-08",
+      "title": "Mất cập nhật bộ đếm khi có request đồng thời",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token)\ncurl -s -o /dev/null -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"name\":\"Race\",\"email\":\"race@hw06.local\",\"password\":\"Test1234!\"}'\necho 'ban 5 request dang nhap sai DONG THOI...'\nfor i in 1 2 3 4 5; do curl -s -o /dev/null -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"race@hw06.local\",\"password\":\"SAI\"}' & done; wait\nprintf 'login_attempts = '; curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq '.[] | select(.email==\"race@hw06.local\") | .login_attempts'\necho '(tuan tu phai ra 10 voi buoc nhay 2, hoac 5 neu dung dac ta)'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token)\ncurl -s -o /dev/null -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"name\":\"Race\",\"email\":\"race@hw06.local\",\"password\":\"Test1234!\"}'\necho 'ban 5 request dang nhap sai DONG THOI...'\nfor i in 1 2 3 4 5; do curl -s -o /dev/null -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"race@hw06.local\",\"password\":\"SAI\"}' & done; wait\nprintf 'login_attempts = '; curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq '.[] | select(.email==\"race@hw06.local\") | .login_attempts'\necho '(tuan tu phai ra 10 voi buoc nhay 2, hoac 5 neu dung dac ta)'",
+          "out": "ban 5 request dang nhap sai DONG THOI...\nlogin_attempts = 4\n(tuan tu phai ra 10 voi buoc nhay 2, hoac 5 neu dung dac ta)\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-09",
+      "title": "Không có giới hạn tần suất theo IP",
+      "cmds": [
+        "S=$(date +%s%N); for i in $(seq 1 100); do curl -s -o /dev/null -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"ma@hw06.local\",\"password\":\"SAI\"}'; done; E=$(date +%s%N); echo \"100 request hoan tat trong $(( (E-S)/1000000 )) ms, khong request nao bi chan\""
+      ],
+      "parts": [
+        {
+          "cmd": "S=$(date +%s%N); for i in $(seq 1 100); do curl -s -o /dev/null -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"ma@hw06.local\",\"password\":\"SAI\"}'; done; E=$(date +%s%N); echo \"100 request hoan tat trong $(( (E-S)/1000000 )) ms, khong request nao bi chan\"",
+          "out": "100 request hoan tat trong 512 ms, khong request nao bi chan\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-10",
+      "title": "Khoá tài khoản dùng được làm vũ khí từ chối dịch vụ",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1\necho 'KE TAN CONG (chi biet email, khong biet mat khau):'\ncurl -s -o /dev/null -w '  doan bua lan 1 -> HTTP %{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"doan-bua-1\"}'\ncurl -s -o /dev/null -w '  doan bua lan 2 -> HTTP %{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"doan-bua-2\"}'\necho 'NAN NHAN (dung dung mat khau cua minh):'\ncurl -s -w '\\n  <- HTTP %{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1\necho 'KE TAN CONG (chi biet email, khong biet mat khau):'\ncurl -s -o /dev/null -w '  doan bua lan 1 -> HTTP %{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"doan-bua-1\"}'\ncurl -s -o /dev/null -w '  doan bua lan 2 -> HTTP %{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"doan-bua-2\"}'\necho 'NAN NHAN (dung dung mat khau cua minh):'\ncurl -s -w '\\n  <- HTTP %{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}'",
+          "out": "KE TAN CONG (chi biet email, khong biet mat khau):\n  doan bua lan 1 -> HTTP 401\n  doan bua lan 2 -> HTTP 401\nNAN NHAN (dung dung mat khau cua minh):\n{\"error\":\"Tài khoản đã bị khóa. Vui lòng thử lại sau.\"}\n  <- HTTP 403\n"
+        }
+      ]
+    },
+    {
+      "id": "BUG-A1-11",
+      "title": "Hết hạn khoá không reset bộ đếm → khoá vĩnh viễn",
+      "cmds": [
+        "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token)\nctr(){ curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq -c '.[] | select(.email==\"test@eshop.com\") | {login_attempts, locked_until}'; }\nbad(){ curl -s -o /dev/null -w '%{http_code}' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'; }\necho \"T+0     sai 1 -> $(bad)   $(ctr)\"\necho \"        sai 2 -> $(bad)   $(ctr)   [da khoa]\"\necho '        ... cho 185 giay cho het han khoa ...'\nsleep 185\necho \"T+185   $(ctr)   <- bo dem KHONG duoc reset\"\necho \"        sai them DUNG 1 lan -> $(bad)   $(ctr)   [khoa lai them 180s]\"\nprintf '        thu mat khau DUNG -> HTTP '; curl -s -o /dev/null -w '%{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}'"
+      ],
+      "parts": [
+        {
+          "cmd": "./scripts/reset-db.sh >/dev/null 2>&1; AT=$(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@eshop.com\",\"password\":\"Admin123!\"}' | jq -r .token)\nctr(){ curl -s localhost:3000/api/admin/users -H \"Authorization: Bearer $AT\" | jq -c '.[] | select(.email==\"test@eshop.com\") | {login_attempts, locked_until}'; }\nbad(){ curl -s -o /dev/null -w '%{http_code}' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"SAI\"}'; }\necho \"T+0     sai 1 -> $(bad)   $(ctr)\"\necho \"        sai 2 -> $(bad)   $(ctr)   [da khoa]\"\necho '        ... cho 185 giay cho het han khoa ...'\nsleep 185\necho \"T+185   $(ctr)   <- bo dem KHONG duoc reset\"\necho \"        sai them DUNG 1 lan -> $(bad)   $(ctr)   [khoa lai them 180s]\"\nprintf '        thu mat khau DUNG -> HTTP '; curl -s -o /dev/null -w '%{http_code}\\n' -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"test@eshop.com\",\"password\":\"Test1234!\"}'",
+          "out": "T+0     sai 1 -> 401   {\"login_attempts\":2,\"locked_until\":null}\n        sai 2 -> 401   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T04:21:50.789Z\"}   [da khoa]\n        ... cho 185 giay cho het han khoa ...\nT+185   {\"login_attempts\":4,\"locked_until\":\"2026-08-19T04:21:50.789Z\"}   <- bo dem KHONG duoc reset\n        sai them DUNG 1 lan -> 401   {\"login_attempts\":6,\"locked_until\":\"2026-08-19T04:24:55.814Z\"}   [khoa lai them 180s]\n        thu mat khau DUNG -> HTTP 403\n"
+        }
+      ]
+    }
+  ]
+}
